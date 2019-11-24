@@ -16,31 +16,14 @@ bpy.ops.object.delete({"selected_objects": objs})
 
 '''
 
-'''
-# Create a bezier circle and enter edit mode.
-curve = bpy.ops.curve.primitive_bezier_circle_add(radius=1.0,
-                                      location=(0.0, 0.0, 0.0),
-                                      enter_editmode=True)
-
-# Subdivide the curve by a number of cuts, giving the
-# random vertex function more points to work with.
-bpy.ops.curve.subdivide(number_cuts=16)
-# Randomize the vertices of the bezier circle.
-# offset [-inf .. inf], uniform [0.0 .. 1.0],
-# normal [0.0 .. 1.0], RNG seed [0 .. 10000].
-bpy.ops.transform.vertex_random(offset=1.0, uniform=0.1, normal=0.0, seed=0)
-
-# Scale the curve while in edit mode.
-bpy.ops.transform.resize(value=(2.0, 2.0, 3.0))
-
-# Return to object mode.
-bpy.ops.object.mode_set(mode='OBJECT')
-'''
 def MakeRandomCurve(objName, curveName, numPoint, scale):
+    # Setup curve 
     curveData = D.curves.new(name=curveName, type='CURVE')
-    #curveData.dimensions = '3D'
+    curveData.bevel_depth = 0.05
+    curveData.dimensions = '3D'
+
     curve = bpy.data.objects.new(objName, curveData)  
-    curve.location = (0,0,0) # object origin  
+    curve.location = (0,0,0)
     C.scene.collection.objects.link(curve)
 
     polyline = curveData.splines.new('BEZIER')
@@ -56,7 +39,8 @@ def MakeRandomCurve(objName, curveName, numPoint, scale):
     polyline.order_u = len(polyline.points)-1
     polyline.use_endpoint_u = True
     polyline.use_cyclic_u = True 
+
     
     return curve
 
-curve = MakeRandomCurve('curveObject', 'curve', 32, 5)
+curve = MakeRandomCurve('curveObject', 'curve', 12, 5)
