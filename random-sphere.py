@@ -27,16 +27,16 @@ def create_uv_sphere(name, u=32, v=32, d=1):
     # create object and link to scene
     x = random.randint(-3.0, 3.0)
     y = random.randint(-3.0, 3.0)
-    z = random.randint(-3.0, 3.0)
+    z = random.randint(-12.0, 12.0)
+    
     obj = D.objects.new(name, mesh)
     obj.location = (x, y, z)
+
+    # mod = obj.modifiers.new("Soft body", 'SOFT_BODY')
     C.scene.collection.objects.link(obj)
     for face in mesh.polygons:
         face.use_smooth = True
 
-    # C.scene.collection.objects.active = bpy.data.objects[name]
-    # C.area.type = "PROPERTIES"
-    # bpy.ops.object.modifier_add(type='COLLISION')
     return obj
 
 numSphere = 64
