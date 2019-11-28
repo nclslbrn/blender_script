@@ -47,18 +47,15 @@ class Walker:
     def DD(self):
         self.z -= step
 
-    def getMove():
-        moves = {
-            'moveNN': NN,
-            'moveNE': NE,
-            'moveEE': EE,
-            'moveSE': SE,
-            'moveSS': SS,
-            'moveSW': SW,
-            'moveWW': WW,
-            'moveNW': NW,
-            'moveUU': UU,
-            'moveDD': DD
-        }
-
-        return moves
+    self.moves = {
+        'moveNN': NN,
+        'moveNE': NE,
+        'moveEE': EE,
+        'moveSE': SE,
+        'moveSS': SS,
+        'moveSW': SW,
+        'moveWW': WW,
+        'moveNW': NW,
+        'moveUU': UU,
+        'moveDD': DD
+    }
