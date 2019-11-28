@@ -1,7 +1,7 @@
 import bpy
 import bmesh
 import random
-from mathutils import *
+# from mathutils import *
 
 D = bpy.data
 C = bpy.context
@@ -17,18 +17,19 @@ bpy.ops.object.delete({"selected_objects": objs})
 
 '''
 
+
 def create_uv_sphere(name, u=32, v=32, d=1):
     bm =  bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=u, v_segments=v, diameter=d)
     mesh = D.meshes.new(name + "_mesh")
     bm.to_mesh(mesh)
     bm.free()
-    
+
     # create object and link to scene
     x = random.randint(-3.0, 3.0)
     y = random.randint(-3.0, 3.0)
     z = random.randint(-12.0, 12.0)
-    
+
     obj = D.objects.new(name, mesh)
     obj.location = (x, y, z)
 
@@ -39,9 +40,9 @@ def create_uv_sphere(name, u=32, v=32, d=1):
 
     return obj
 
+
 numSphere = 64
 
-for s in range(0,numSphere):
+for s in range(0, numSphere):
     diameter = random.uniform(0.5, 1.3)
     sphere = create_uv_sphere('sphere-' + str(s), u=32, v=32, d=diameter)
-    

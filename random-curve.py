@@ -1,7 +1,7 @@
 import bpy
 import random
-import math
-from mathutils import *
+# import math
+# from mathutils import *
 D = bpy.data
 C = bpy.context
 
@@ -18,6 +18,7 @@ bpy.ops.object.delete({"selected_objects": objs})
     Your creative code here
 
 '''
+
 
 def MakeRandomCurve(objName, curveName, numPoint, scale, radius):
 
@@ -54,9 +55,8 @@ def MakeRandomCurve(objName, curveName, numPoint, scale, radius):
 
     polyline.order_u = len(polyline.points)-1
     polyline.use_endpoint_u = True
-    polyline.use_cyclic_u = True 
-
-    
+    polyline.use_cyclic_u = True
     return curve
+
 
 curve = MakeRandomCurve('curveObject', 'curve', 256, 5, 0.01)
