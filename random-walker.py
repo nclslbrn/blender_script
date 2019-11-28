@@ -20,36 +20,34 @@ bpy.ops.object.delete({"selected_objects": objs})
     Your creative code here
 
 '''
-size = 12
+limit = 12
 pointPos = {'x': 0, 'y': 0, 'z': 0}
 pointHistory = []
 nPoint = 0
-step = 15
-
+step = 0.5
 quarterPi = pi / 4
+mooveNum = 75
 
-'''
-    MOOVE FUNCTION
-'''
+# MOOVE FUNCTIONS
 
 
 def NN(point):
-    point['x'] -= step
-    return point
-
-
-def SS(point):
-    point['x'] += step
-    return point
-
-
-def WW(point):
     point['y'] -= step
     return point
 
 
-def EE(point):
+def SS(point):
     point['y'] += step
+    return point
+
+
+def WW(point):
+    point['x'] -= step
+    return point
+
+
+def EE(point):
+    point['x'] += step
     return point
 
 
@@ -77,6 +75,16 @@ def SW(point):
     return point
 
 
+def UU(point):
+    point['z'] += step
+    return point
+
+
+def DD(point):
+    point['z'] -= step
+    return point
+
+
 moves = {
     'moveNN': NN,
     'moveNE': NE,
@@ -85,17 +93,17 @@ moves = {
     'moveSS': SS,
     'moveSW': SW,
     'moveWW': WW,
-    'moveNW': NW
+    'moveNW': NW,
+    'moveUU': UU,
+    'moveDD': DD
 }
 
-'''
-    SETUP OBJECT
-'''
+# SETUP OBJECT
 
 
-def setupCurve():
-    curveRes = 32
-    extrude = 0.01
+def setupCurve(points):
+    curveRes = 2
+    extrude = 0
     # Setup curve path
     curveData = D.curves.new(name='curveName', type='CURVE')
     curveData.bevel_depth = 0.01
@@ -108,43 +116,64 @@ def setupCurve():
     curve = bpy.data.objects.new('objName', curveData)
     curve.location = (0, 0, 0)
     C.scene.collection.objects.link(curve)
-
-    polyline = curveData.splines.new('BEZIER')
+    polyline = curveData.splines.new('POLY')
 
     return polyline
 
 
-def drawCurve(curve, pointHistory):
-    points = numpy.array(pointHistory)
-    polyline.bezier_points.add(len(points-1))
+def drawCurve(curve, points):
+    polyline.points.add(len(points))
 
-    for p in range(0, len(points)):
+    for p in range(len(points)):
 
-        polyline.bezier_points[p].co = [
+        polyline.points[p].co = (
             points[p][0],
             points[p][1],
-            points[p][2]
-        ]
+            points[p][2],
+            0.1
+        )
+        # polyline.points[p].radius = random.uniform(0.1, 0.5)
 
-    polyline.order_u = len(polyline.points)-1
+    polyline.order_u = len(polyline.points)
     polyline.use_endpoint_u = True
-    polyline.use_cyclic_u = True
+    polyline.use_cyclic_u = False
 
 
-'''
-    MOOVE LOOP
-'''
+# MOOVE LOOP
 
-polyline = setupCurve()
 
-while(
-    pointPos['x'] > size * -0.5 or
-    pointPos['y'] > size * -0.5 or
-    pointPos['x'] < size * 0.5 or
-    pointPos['y'] < size * 0.5
-):
+for m in range(0, mooveNum):
+
+    posAlreadyUsed = False
+    posTooFar = False
+
     move = random.choice(list(moves.keys()))
-    pointPos = moves[move](pointPos)
-    pointHistory.append([pointPos['x'], pointPos['y'], pointPos['z']])
-    drawCurve(polyline, pointHistory)
-    nPoint += 1
+    newPos = moves[move](pointPos)
+
+    # check if newPos is out of limit
+    if(
+        newPos['x'] < limit * -0.5 or
+        newPos['y'] < limit * -0.5 or
+        newPos['x'] > limit * 0.5 or
+        newPos['y'] > limit * 0.5
+    ):
+        posTooFar = True
+
+    # check if newPos already exists in pointHistory
+    for p in range(len(pointHistory)):
+        if(
+            pointHistory[p][0] == newPos['x'] and
+            pointHistory[p][1] == newPos['y'] and
+            pointHistory[p][2] == newPos['y']
+        ):
+            posAlreadyUsed = True
+
+    # then store newPos in pointHistory
+    if not posAlreadyUsed and not posTooFar:
+        pointHistory.append([newPos['x'], newPos['y'], newPos['z']])
+        pointPos = newPos
+
+points = numpy.array(pointHistory)
+print(len(points))
+polyline = setupCurve(points)
+drawCurve(polyline, points)

@@ -12,7 +12,7 @@ C = bpy.context
 objs = []
 for obj in C.scene.objects:
     objs.append(obj)
-bpy.ops.object.delete({"selected_objects": objs})  
+bpy.ops.object.delete({"selected_objects": objs})
 
 '''
     Your creative code here
@@ -34,8 +34,8 @@ def MakeRandomCurve(objName, curveName, numPoint, scale, radius):
     curveData.extrude = extrude
 
     # Setup curve object
-    curve = bpy.data.objects.new(objName, curveData)  
-    curve.location = (0,0,0)
+    curve = bpy.data.objects.new(objName, curveData)
+    curve.location = (0, 0, 0)
     C.scene.collection.objects.link(curve)
 
     polyline = curveData.splines.new('BEZIER')

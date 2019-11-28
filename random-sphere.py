@@ -10,7 +10,7 @@ C = bpy.context
 objs = []
 for obj in C.scene.objects:
     objs.append(obj)
-bpy.ops.object.delete({"selected_objects": objs})  
+bpy.ops.object.delete({"selected_objects": objs})
 
 '''
     Your creative code here
@@ -19,7 +19,7 @@ bpy.ops.object.delete({"selected_objects": objs})
 
 
 def create_uv_sphere(name, u=32, v=32, d=1):
-    bm =  bmesh.new()
+    bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=u, v_segments=v, diameter=d)
     mesh = D.meshes.new(name + "_mesh")
     bm.to_mesh(mesh)
