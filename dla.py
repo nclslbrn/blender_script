@@ -69,14 +69,14 @@ def SW(point):
     return point
 
 moves = {
-    0 : 'NN', 
-    1 : 'NE',
-    2 : 'EE', 
-    3 : 'SE',
-    4 : 'SS',
-    5 : 'SW',
-    6 : 'WW',
-    7 : 'NW'
+    'moveNN' : NN, 
+    'moveNE' : NE,
+    'moveEE' : EE, 
+    'moveSE' : SE,
+    'moveSS' : SS,
+    'moveSW' : SW,
+    'moveWW' : WW,
+    'moveNW' : NW
 }
 
 '''
@@ -104,15 +104,15 @@ def setupCurve():
     return polyline
 
 def drawCurve(curve, pointHistory):
+    points = numpy.array(pointHistory)
+    polyline.bezier_points.add(len(points-1))
 
-    polyline.bezier_points.add(len(pointHistory-1))
-
-    for p in range(0, len(pointHistory)):
-
+    for p in range(0, len(points)):
+    
         polyline.bezier_points[p].co = [
-            pointHistory[p]['x'], 
-            pointHistory[p]['y'],
-            pointHistory[p]['z']
+            points[p][0], 
+            points[p][1],
+            points[p][2]
         ]
 
     polyline.order_u = len(polyline.points)-1
@@ -132,10 +132,9 @@ while(
     pointPos['x'] < size * 0.5 or
     pointPos['y'] < size * 0.5 
 ):
-    move = int(random.choice(list(moves.keys())))
-    print(move)
+    move = random.choice(list(moves.keys()))
     pointPos = moves[move](pointPos)
-    pointHistory[nPoint].co = [pointPos['x'], pointPos['y'], pointPos.z]
+    pointHistory.append([pointPos['x'], pointPos['y'], pointPos['z']])
     drawCurve(polyline, pointHistory)
     nPoint+=1
 
