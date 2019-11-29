@@ -2,6 +2,7 @@ import bpy
 import numpy
 import sys
 import os
+import random as random
 dir = os.path.dirname(bpy.data.filepath)
 if dir not in sys.path:
     sys.path.append(dir)
@@ -26,7 +27,7 @@ bpy.ops.object.delete({"selected_objects": objs})
 '''
 limit = 12
 mooveNum = 120
-walkerNum = 3
+walkerNum = 26
 
 
 # SETUP OBJECT
@@ -62,9 +63,8 @@ def drawCurve(curve, points):
             points[p][2],
             0.1
         )
-        # polyline.points[p].radius = random.uniform(0.1, 0.5)
+        polyline.points[p].radius = random.uniform(0.1, 0.5)
 
-    polyline.order_u = len(polyline.points)-1
     polyline.use_endpoint_u = True
     polyline.use_cyclic_u = False
 
