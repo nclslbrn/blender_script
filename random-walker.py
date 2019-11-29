@@ -1,10 +1,18 @@
 import bpy
 import random
-# import bmesh
 import numpy
+import sys
+import os
+# import bmesh
 # import scipy
-from math import sin, cos, pi  # sqrt
 # from mathutils import Vector
+from math import sin, cos, pi  # sqrt
+
+dir = os.path.dirname(bpy.data.filepath)
+if not dir in sys.path:
+    sys.path.append(dir)
+
+from walker import walker
 
 # Convenience Variables
 D = bpy.data
@@ -28,75 +36,6 @@ step = 0.5
 quarterPi = pi / 4
 mooveNum = 75
 
-# MOOVE FUNCTIONS
-
-
-def NN(point):
-    point['y'] -= step
-    return point
-
-
-def SS(point):
-    point['y'] += step
-    return point
-
-
-def WW(point):
-    point['x'] -= step
-    return point
-
-
-def EE(point):
-    point['x'] += step
-    return point
-
-
-def NE(point):
-    point['x'] += step * cos(quarterPi)
-    point['y'] -= step * sin(quarterPi)
-    return point
-
-
-def NW(point):
-    point['x'] -= step * cos(quarterPi)
-    point['y'] -= step * sin(quarterPi)
-    return point
-
-
-def SE(point):
-    point['x'] += step * cos(quarterPi)
-    point['y'] += step * sin(quarterPi)
-    return point
-
-
-def SW(point):
-    point['x'] -= step * cos(quarterPi)
-    point['y'] += step * sin(quarterPi)
-    return point
-
-
-def UU(point):
-    point['z'] += step
-    return point
-
-
-def DD(point):
-    point['z'] -= step
-    return point
-
-
-moves = {
-    'moveNN': NN,
-    'moveNE': NE,
-    'moveEE': EE,
-    'moveSE': SE,
-    'moveSS': SS,
-    'moveSW': SW,
-    'moveWW': WW,
-    'moveNW': NW,
-    'moveUU': UU,
-    'moveDD': DD
-}
 
 # SETUP OBJECT
 
@@ -147,8 +86,9 @@ for m in range(0, mooveNum):
     posAlreadyUsed = False
     posTooFar = False
 
-    move = random.choice(list(moves.keys()))
-    newPos = moves[move](pointPos)
+    newWalker = walker(pointPos.x, pointPos.y, pointPos.z)
+    newPos = newWalker.move()
+    # newPos = moves[move](pointPos)
 
     # check if newPos is out of limit
     if(

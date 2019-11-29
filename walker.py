@@ -1,4 +1,6 @@
 from math import sin, cos, pi
+from random import choice
+
 step = 0.5
 quarterPi = pi / 4
 
@@ -6,10 +8,11 @@ quarterPi = pi / 4
 class Walker:
 
     def __init__(self, x, y, z):
-
         self.x = x
         self.y = y
         self.z = z
+
+
     # MOOVE FUNCTIONS
 
     def NN(self):
@@ -47,7 +50,7 @@ class Walker:
     def DD(self):
         self.z -= step
 
-    self.moves = {
+    moves = {
         'moveNN': NN,
         'moveNE': NE,
         'moveEE': EE,
@@ -59,3 +62,11 @@ class Walker:
         'moveUU': UU,
         'moveDD': DD
     }
+
+    def move(self):
+        choosenMove = choice(list(self.moves.keys()))
+        newPos = self.moves[choosenMove](self)
+        return [self.x, self.y, self.z]
+
+
+    
