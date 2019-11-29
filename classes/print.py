@@ -23,7 +23,3 @@ def print(*args, **kwargs):
 
     console_print(*args, **kwargs)  # to py consoles
     __builtin__.print(*args, **kwargs)  # to system console
-
-
-print("print me to console")
-print("and me\n and me", "and me\nI'm:", print)
