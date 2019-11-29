@@ -1,7 +1,7 @@
 import bpy
 import sys
 import os
-from math import pow
+from math import sqrt
 # from mathutils import *
 
 dir = os.path.dirname(bpy.data.filepath)
@@ -10,6 +10,7 @@ if dir not in sys.path:
 
 from classes.Agent import Agent  # noqa: E731
 from classes.print import print as print  # noqa: E731
+
 D = bpy.data
 C = bpy.context
 
@@ -29,7 +30,7 @@ bpy.ops.object.delete({"selected_objects": objs})
 '''
 agentNum = 6000
 step = 0.1
-limit = 4
+limit = 2
 agents = []
 tree = []
 buildCompleted = False
@@ -38,6 +39,16 @@ tree.append(Agent)
 tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
+
+
+def measure(first, second):
+
+    locx = second.x - first.x
+    locy = second.y - first.y
+    locz = second.z - first.z
+
+    distance = sqrt((locx)**2 + (locy)**2 + (locz)**2)
+    return distance
 
 
 def create_cube(name, d=0.1, faces=True):
@@ -88,11 +99,7 @@ while not buildCompleted:
 
         for t in range(len(tree)):
 
-            dx = agents[a].x - tree[t].x
-            dy = agents[a].y - tree[t].y
-            dz = agents[a].z - tree[t].z
-
-            if pow(dx, 2) + pow(dy, 2) + pow(dz, 2) <= 0.1:
+            if measure(agents[a], tree[t]) <= 0.1:
 
                 agents[a].stop = True
 
@@ -105,13 +112,19 @@ while not buildCompleted:
                     agents[a].z > limit * 0.5
                 ):
                     buildCompleted = False
+                    break
 
                 tree.append(agents[a])
-                print("Add new cube to tree (" + str(len(tree)) + ")" )
+
+                #   Debug
+                #   print("%.2f : %.2f : %.2f" % (agents[a].x, agents[a].y, agents[a].z))
                 del agents[-1]
                 agents.append(Agent)
                 last = len(agents)-1
                 agents[last] = Agent.set(agents[last], limit, step)
 
-for t in range(len(tree)):
-    bpy.ops.mesh.primitive_cube_add(location=(tree[t].x, tree[t].y, tree[t].z))
+if buildCompleted:
+    for t in range(len(tree)):
+        bpy.ops.mesh.primitive_cube_add(
+            location=(tree[t].x, tree[t].y, tree[t].z)
+        )
