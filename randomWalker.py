@@ -28,6 +28,9 @@ bpy.ops.object.delete({"selected_objects": objs})
 limit = 12
 mooveNum = 120
 walkerNum = 26
+animFrame = 500
+
+bpy.context.scene.frame_end = animationFrame
 
 
 # SETUP OBJECT
@@ -43,9 +46,17 @@ def setupCurve(points):
     curveData.render_resolution_u = curveRes
     curveData.extrude = extrude
 
+    # Setup animation
+    curveData.bevel_factor_end = 0
+    curveData.keyframe_insert(data_path="bevel_factor_end", frame=0)
+    curveData.bevel_factor_end = 1
+    curveData.keyframe_insert(data_path="bevel_factor_end", frame=animFrame)
+
     # Setup curve object
     curve = bpy.data.objects.new('objName', curveData)
     curve.location = (0, 0, 0)
+
+    # Add it to the scene
     C.scene.collection.objects.link(curve)
     polyline = curveData.splines.new('NURBS')
 
