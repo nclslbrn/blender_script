@@ -2,7 +2,7 @@ import bpy
 import numpy
 import sys
 import os
-import random as random
+from random import randint, uniform
 dir = os.path.dirname(bpy.data.filepath)
 if dir not in sys.path:
     sys.path.append(dir)
@@ -25,20 +25,26 @@ bpy.ops.object.delete({"selected_objects": objs})
 '''
     Your creative code here
 '''
+materialName = 'curveMat'
 limit = 12
 mooveNum = 120
 walkerNum = 26
-animFrame = 500
-
-bpy.context.scene.frame_end = animationFrame
+animFrame = 250
+minRadius = 0.3
+maxRadius = 1
+minGrowingStep = 3
+maxGrowingStep = 24
+radiusStep = maxRadius / mooveNum
+bpy.context.scene.frame_end = animFrame
 
 
 # SETUP OBJECT
 
-def setupCurve(points):
+def setupCurve(w, points, material):
     curveRes = 2
     extrude = 0
     # Setup curve path
+    curveName = "curve-" + str(w)
     curveData = D.curves.new(name='curveName', type='CURVE')
     curveData.bevel_depth = 0.1
     curveData.dimensions = '3D'
@@ -49,12 +55,38 @@ def setupCurve(points):
     # Setup animation
     curveData.bevel_factor_end = 0
     curveData.keyframe_insert(data_path="bevel_factor_end", frame=0)
+    growingAnimStep = randint(minGrowingStep, maxGrowingStep)
+    frameStep = int(animFrame / growingAnimStep+1)
+    currFrame = frameStep
+
+    for s in range(growingAnimStep):
+        bevel_end = 1 / growingAnimStep * s
+        bevel_lag = bevel_end + uniform(0.001, 0.005)
+
+        curveData.bevel_factor_end = bevel_end
+        curveData.keyframe_insert(
+            data_path="bevel_factor_end",
+            frame=currFrame
+        )
+        curveData.bevel_factor_end = bevel_lag
+        curveData.keyframe_insert(
+            data_path="bevel_factor_end",
+            frame=currFrame+randint(5, 10)
+        )
+        currFrame += frameStep
+
     curveData.bevel_factor_end = 1
     curveData.keyframe_insert(data_path="bevel_factor_end", frame=animFrame)
 
     # Setup curve object
-    curve = bpy.data.objects.new('objName', curveData)
+    curve = bpy.data.objects.new(curveName, curveData)
+    curve.active_material = material
     curve.location = (0, 0, 0)
+
+    # Add modifier
+    modifierName = 'solid-' + str(w)
+    curve.modifiers.new(name=modifierName, type='SOLIDIFY')
+    curve.modifiers[modifierName].thickness = 0.04
 
     # Add it to the scene
     C.scene.collection.objects.link(curve)
@@ -72,9 +104,12 @@ def drawCurve(curve, points):
             points[p][0],
             points[p][1],
             points[p][2],
-            0.1
+            1
         )
-        polyline.points[p].radius = random.uniform(0.1, 0.5)
+
+        radius = minRadius + (len(points) - p) * radiusStep
+
+        polyline.points[p].radius = radius
 
     polyline.use_endpoint_u = True
     polyline.use_cyclic_u = False
@@ -119,7 +154,8 @@ for w in range(walkerNum):
             del pointHistory[len(pointHistory)-1]
 
     points = numpy.array(pointHistory)
-    polyline = setupCurve(points)
+    material = D.materials.get(materialName)
+    polyline = setupCurve(w, points, material)
     drawCurve(polyline, points)
 
 print("DONE")
