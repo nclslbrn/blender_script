@@ -1,6 +1,7 @@
 import bpy
 import sys
 import os
+import bmesh
 from math import sqrt
 # from mathutils import *
 
@@ -9,7 +10,7 @@ if dir not in sys.path:
     sys.path.append(dir)
 
 from classes.Agent import Agent  # noqa: E731
-from classes.print import print as print  # noqa: E731
+from classes.print import printPos  # noqa: E731
 
 D = bpy.data
 C = bpy.context
@@ -29,8 +30,9 @@ bpy.ops.object.delete({"selected_objects": objs})
 
 '''
 agentNum = 6000
-step = 0.1
-limit = 2
+agentLimit = 500
+step = 0.01
+limit = 0.5
 agents = []
 tree = []
 buildCompleted = False
@@ -51,45 +53,33 @@ def measure(first, second):
     return distance
 
 
-def create_cube(name, d=0.1, faces=True):
+def create_cube(name='default_cube', d=0.1, location=(0, 0, 0), faces=True):
 
-    Verts = [
-        (1.0, 1.0, -1.0),
-        (1.0, -1.0, -1.0),
-        (-1.0, -1.0, -1.0),
-        (-1.0, 1.0, -1.0),
-        (1.0, 1.0, 1.0),
-        (1.0, -1.0, 1.0),
-        (-1.0, -1.0, 1.0),
-        (-1.0, 1.0, 1.0)
-    ]
+    # Create an empty mesh and the object.
+    mesh = bpy.data.meshes.new('Voxel')
+    basic_cube = bpy.data.objects.new(name, mesh)
+    basic_cube.location = location
 
-    face_indices = [
-        (0, 1, 2, 3),
-        (4, 7, 6, 5),
-        (0, 4, 5, 1),
-        (1, 5, 6, 2),
-        (2, 6, 7, 3),
-        (4, 0, 3, 7)
-    ]
+    # Add the object into the scene.
+    C.scene.collection.objects.link(basic_cube)
 
-    Faces = face_indices if faces else []
+    # Construct the bmesh cube and assign it to the blender mesh.
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=step)
+    bm.to_mesh(mesh)
+    bm.free()
 
-    if not (d == 1.0):
-        Verts = [tuple(v*d for v in vert) for vert in Verts]
+    return basic_cube
 
-    mesh = D.meshes.new(name + "_mesh")
-    mesh.from_pydata(Verts, [], Faces)
-    mesh.update()
 
-    obj = D.objects.new(name + "_Object", mesh)
-    C.scene.collection.objects.link(obj)
-    return obj
+srcObject = create_cube(name='origVoxel', d=step,
+                        location=(0, 0, 0), faces=True)
 
 
 for a in range(agentNum):
     agents.append(Agent)
     agents[a].set(agents[a], limit, step)
+
 
 while not buildCompleted:
 
@@ -99,32 +89,55 @@ while not buildCompleted:
 
         for t in range(len(tree)):
 
-            if measure(agents[a], tree[t]) <= 0.1:
+            if measure(agents[a], tree[t]) <= step:
 
                 agents[a].stop = True
-
-                if(
-                    agents[a].x < limit * -0.5 or
-                    agents[a].y < limit * -0.5 or
-                    agents[a].z < limit * -0.5 or
-                    agents[a].x > limit * 0.5 or
-                    agents[a].y > limit * 0.5 or
-                    agents[a].z > limit * 0.5
-                ):
-                    buildCompleted = False
-                    break
-
-                tree.append(agents[a])
+                tree.append(Agent)
+                lastTree = len(tree)-1
+                tree[lastTree].x = agents[a].x
+                tree[lastTree].y = agents[a].y
+                tree[lastTree].z = agents[a].z
 
                 #   Debug
-                #   print("%.2f : %.2f : %.2f" % (agents[a].x, agents[a].y, agents[a].z))
+                #   printPos(agents[a])
+                print(len(tree))
+
                 del agents[-1]
                 agents.append(Agent)
-                last = len(agents)-1
-                agents[last] = Agent.set(agents[last], limit, step)
+                lastAgent = len(agents)-1
+                agents[lastAgent] = Agent.set(agents[lastAgent], limit, step)
 
-if buildCompleted:
+            if(
+                tree[t].x < limit * -0.5 or
+                tree[t].y < limit * -0.5 or
+                tree[t].z < limit * -0.5 or
+                tree[t].x > limit * 0.5 or
+                tree[t].y > limit * 0.5 or
+                tree[t].z > limit * 0.5
+            ):
+                buildCompleted = True
+                break
+
+        if len(tree) > agentLimit:
+
+            buildCompleted = True
+            break
+
+else:
+
+    print("Build the DLA shape")
+
     for t in range(len(tree)):
-        bpy.ops.mesh.primitive_cube_add(
-            location=(tree[t].x, tree[t].y, tree[t].z)
-        )
+
+        voxelCopy = srcObject.copy()
+        voxelCopy.name = 'Voxel-copy-' + str(t)
+        voxelCopy.data = srcObject.data.copy()
+        voxelCopy.animation_data_clear()
+        if hasattr(tree[t], 'x') and hasattr(tree[t], 'y') and hasattr(tree[t], 'z'):
+            printPos(tree[t])
+        else:
+            print("Tree n° " + str(t) + " x, y and z not set.")
+
+        voxelCopy.location = (tree[t].x, tree[t].y, tree[t].z)
+        print(voxelCopy.location)
+        C.scene.collection.objects.link(voxelCopy)

@@ -23,3 +23,11 @@ def print(*args, **kwargs):
 
     console_print(*args, **kwargs)  # to py consoles
     __builtin__.print(*args, **kwargs)  # to system console
+
+
+def printPos(pos):
+    print(
+        str(round(pos.x, 2)) + ', ' +
+        str(round(pos.y, 2)) + ', ' +
+        str(round(pos.z, 2))
+    )
