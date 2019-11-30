@@ -10,9 +10,6 @@ class Agent:
         self.z = z
         self.stop = False
 
-    def __str__(self):
-        return '[{:0.2f}:{:0.2f}:{:0.2f}]'.format(self.x, self.y, self.z)
-
     def set(self, limit, step):
 
         self.x = uniform(limit * -0.5, limit * 0.5)
@@ -42,4 +39,4 @@ class Agent:
             elif axe == 5:
                 self.z -= self.step
 
-            return self
+        return self

@@ -1,7 +1,7 @@
-import bpy
+import bpy  # noqa
 import sys
 import os
-import bmesh
+import bmesh  # noqa
 from math import sqrt
 # from mathutils import *
 
@@ -31,12 +31,12 @@ bpy.ops.object.delete({"selected_objects": objs})
 '''
 agentNum = 6000
 agentLimit = 500
-step = 0.01
-limit = 0.5
+step = 0.1
+limit = 24
 agents = []
 tree = []
 buildCompleted = False
-
+treeCount = 0
 tree.append(Agent)
 tree[0].x = 0
 tree[0].y = 0
@@ -72,9 +72,12 @@ def create_cube(name='default_cube', d=0.1, location=(0, 0, 0), faces=True):
     return basic_cube
 
 
-srcObject = create_cube(name='origVoxel', d=step,
-                        location=(0, 0, 0), faces=True)
-
+srcObject = create_cube(
+    name='origVoxel',
+    d=step,
+    location=(0, 0, 0),
+    faces=True
+)
 
 for a in range(agentNum):
     agents.append(Agent)
@@ -83,61 +86,51 @@ for a in range(agentNum):
 
 while not buildCompleted:
 
-    for a in range(len(agents)):
+    for agent in agents:
 
-        agents[a].move(agents[a])
+        for m in range(6):
 
-        for t in range(len(tree)):
+            agent.move(agent)
 
-            if measure(agents[a], tree[t]) <= step:
+        for branch in tree:
 
-                agents[a].stop = True
+            if measure(agent, branch) < step:
+
+                agent.stop = True
                 tree.append(Agent)
                 lastTree = len(tree)-1
-                tree[lastTree].x = agents[a].x
-                tree[lastTree].y = agents[a].y
-                tree[lastTree].z = agents[a].z
+                tree[lastTree] = agent
+                treeCount += 1
 
-                #   Debug
-                #   printPos(agents[a])
-                print(len(tree))
+                if treeCount > agentLimit:
+                    buildCompleted = True
+                    break
+                else:
+                    print(len(tree))
 
-                del agents[-1]
-                agents.append(Agent)
-                lastAgent = len(agents)-1
-                agents[lastAgent] = Agent.set(agents[lastAgent], limit, step)
+                agent.set(agent, limit, step)
 
             if(
-                tree[t].x < limit * -0.5 or
-                tree[t].y < limit * -0.5 or
-                tree[t].z < limit * -0.5 or
-                tree[t].x > limit * 0.5 or
-                tree[t].y > limit * 0.5 or
-                tree[t].z > limit * 0.5
+                branch.x < limit * -0.5 or
+                branch.y < limit * -0.5 or
+                branch.z < limit * -0.5 or
+                branch.x > limit * 0.5 or
+                branch.y > limit * 0.5 or
+                branch.z > limit * 0.5
             ):
                 buildCompleted = True
                 break
 
-        if len(tree) > agentLimit:
-
-            buildCompleted = True
-            break
-
 else:
 
     print("Build the DLA shape")
-
-    for t in range(len(tree)):
+    nt = 0
+    for t in tree:
 
         voxelCopy = srcObject.copy()
-        voxelCopy.name = 'Voxel-copy-' + str(t)
+        voxelCopy.name = 'Voxel-copy-' + str(nt)
         voxelCopy.data = srcObject.data.copy()
         voxelCopy.animation_data_clear()
-        if hasattr(tree[t], 'x') and hasattr(tree[t], 'y') and hasattr(tree[t], 'z'):
-            printPos(tree[t])
-        else:
-            print("Tree n° " + str(t) + " x, y and z not set.")
-
-        voxelCopy.location = (tree[t].x, tree[t].y, tree[t].z)
-        print(voxelCopy.location)
+        voxelCopy.location = (t.x, t.y, t.z)
         C.scene.collection.objects.link(voxelCopy)
+        nt += 1
