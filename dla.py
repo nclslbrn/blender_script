@@ -2,7 +2,7 @@ import bpy  # noqa
 import sys
 import os
 import bmesh  # noqa
-import time
+# import time
 from math import sqrt
 # from mathutils import *
 
@@ -21,11 +21,11 @@ C = bpy.context
     Your creative code here
 
 '''
-agentNum = 500
-agentLimit = 200
-AgentSpeed = 0.1
-agentSize = 0.5
-limit = 12
+agentNum = 5000
+agentLimit = 1000
+AgentSpeed = 0.5
+agentSize = 0.1
+limit = 35
 agents = []
 tree = []
 buildCompleted = False
@@ -36,6 +36,17 @@ tree[0].y = 0
 tree[0].z = 0
 
 debug = False
+
+
+def update_progress(job_title, progress):
+    length = 20  # modify this to change the length
+    block = int(round(length*progress))
+    msg = "\r{0}: |{1}| {2}%".format(
+        job_title, "█"*block + " "*(length-block), round(progress*100, 2))
+    if progress >= 1:
+        msg += " DONE\r\n"
+    sys.stdout.write(msg)
+    sys.stdout.flush()
 
 
 def cleanScene():
@@ -72,7 +83,12 @@ def create_orig_voxel(
 
     # Construct the bmesh cube and assign it to the blender mesh.
     bm = bmesh.new()
-    bmesh.ops.create_cube(bm, size=agentSize)
+    bmesh.ops.create_uvsphere(
+        bm,
+        u_segments=4,
+        v_segments=4,
+        diameter=agentSize
+    )
     bm.to_mesh(mesh)
     bm.free()
 
@@ -120,7 +136,7 @@ def copyParticleToStructure():
     for branch in tree:
         nAgent = 0
         for agent in agents:
-            if measure(agent, branch) <= agentSize:
+            if measure(agent, branch) <= agentSize * 2:
 
                 agent.stop = True
                 tree.append(agent)
@@ -165,7 +181,7 @@ def showParticle():
     na = 0
     for agent in agents:
         voxelCopy = srcObject.copy()
-        voxelCopy.name = 'particle-' + str(na)
+        # voxelCopy.name = 'particle-' + str(na)
         voxelCopy.data = srcObject.data.copy()
         voxelCopy.animation_data_clear()
         voxelCopy.location = (agent.x, agent.y, agent.z)
@@ -185,28 +201,41 @@ def buildShape():
     nt = 0
     for t in tree:
         voxelCopy = srcObject.copy()
-        voxelCopy.name = 'Voxel-copy-' + str(nt)
+        # voxelCopy.name = 'Voxel-copy-' + str(nt)
         voxelCopy.data = srcObject.data.copy()
         voxelCopy.animation_data_clear()
         voxelCopy.location = (t.x, t.y, t.z)
         C.scene.collection.objects.link(voxelCopy)
+        progress = nt / len(tree)
+        update_progress("Building DLA tree", progress)
         nt += 1
 
 
 cleanScene()
+srcObject = create_orig_voxel(
+    name='origVoxel',
+    d=agentSize,
+    location=(0, 0, 0),
+    faces=True
+)
+
 initParticles()
 
 while not buildCompleted:
     moveParticle()
     copyParticleToStructure()
     buildCompleted = checkTreeLenght(buildCompleted)
-
-    if debug:
-        print(str(len(tree)) + " elements in the tree.")
+    progress = len(tree) / agentLimit
+    update_progress("Computing DLA tree", progress)
+    # print(str(len(tree)) + " elements in the tree.")
 
     if buildCompleted:
         break
     # time.sleep(0.5)  # pause of 0.5sec
+
+update_progress("Computing DLA tree", 1)
 buildShape()
+update_progress("Building DLA tree", 1)
+
 
 # showParticle()
