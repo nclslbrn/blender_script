@@ -1,22 +1,37 @@
-import random
+from random import uniform, randint
+from math import cos, sin, pi
 
 
 class Agent:
 
-    def __init__(self, x, y, z):
+    def __init__(self, size, x, y, z):
 
         self.x = x
         self.y = y
         self.z = z
+        self.size = size
         self.stop = False
 
-    def set(self, limit, speed):
+    def set(self, limit, speed, size):
         min = limit * -0.5
         max = limit * 0.5
-        self.x = random.uniform(min, max)
-        self.y = random.uniform(min, max)
-        self.z = random.uniform(min, max)
+        self.x = uniform(min, max)
+        self.y = uniform(min, max)
+        self.z = uniform(min, max)
         self.speed = speed
+        self.size = size
+        self.stop = False
+
+        return self
+
+    def onRadius(self, limit, speed, size):
+        radius = limit / 2
+        angle = uniform(0, pi * 2)
+        self.x = radius * cos(angle)
+        self.y = radius * sin(angle)
+        self.z = radius * cos(angle)
+        self.speed = speed
+        self.size = size
         self.stop = False
 
         return self
@@ -25,7 +40,7 @@ class Agent:
 
         if not self.stop:
 
-            axe = random.randint(0, 5)
+            axe = randint(0, 5)
 
             if axe == 0:
                 self.x += self.speed

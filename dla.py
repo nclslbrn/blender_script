@@ -17,11 +17,11 @@ C = bpy.context
     Your creative code here
 
 '''
-agentNum = 200
-agentLimit = 200
-AgentSpeed = 0.1
-agentSize = 0.1
-limit = 24
+agentNum = 50
+agentLimit = 50
+agentSpeed = 0.1
+agentSize = 0.5
+limit = 8
 agents = []
 tree = []
 buildCompleted = False
@@ -30,6 +30,7 @@ tree.append(Agent)
 tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
+tree[0].size = agentSize
 
 debug = False
 
@@ -52,14 +53,6 @@ def create_orig_voxel(
     # Construct the bmesh cube and assign it to the blender mesh.
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=agentSize)
-    '''
-    bmesh.ops.create_uvsphere(
-        bm,
-        u_segments=4,
-        v_segments=4,
-        diameter=agentSize
-    )
-    '''
     bm.to_mesh(mesh)
     bm.free()
 
@@ -71,18 +64,24 @@ def initParticles():
         print('Creating particles...')
 
     for a in range(agentNum-1):
-        newAgent = Agent(x=0, y=0, z=0)
-        newAgent.set(limit=limit, speed=AgentSpeed)
+        newAgent = Agent(size=agentSize, x=0, y=0, z=0)
+        newAgent.set(
+            size=agentSize,
+            limit=limit,
+            speed=agentSpeed
+        )
         agents.append(newAgent)
 
 
-def moveParticle():
+def moveParticle(completion):
+
     if debug:
         print("Moving particles...")
 
     for agent in agents:
-        min = limit * -0.5
-        max = limit * 0.5
+
+        min = (limit+1) * -0.5
+        max = (limit+1) * 0.5
 
         for m in range(5):
             agent.move()
@@ -95,23 +94,33 @@ def moveParticle():
             agent.y > max or
             agent.z > max
         ):
-            agent.set(limit=limit, speed=AgentSpeed)
+            agent.onRadius(
+                size=agentSize,
+                limit=limit,
+                speed=agentSpeed
+            )
 
 
-def copyParticleToStructure():
+def copyParticleToStructure(completion):
     if debug:
         print("Computing the tree...")
 
     for branch in tree:
+
         nAgent = 0
         for agent in agents:
-            if measure(agent, branch) <= agentSize:
+
+            if measure(agent, branch) <= (agent.size + branch.size)/2:
 
                 agent.stop = True
                 tree.append(agent)
                 del agents[nAgent]
-                newAgent = Agent(x=0, y=0, z=0)
-                newAgent.set(limit=limit, speed=AgentSpeed)
+                newAgent = Agent(size=agentSize, x=0, y=0, z=0)
+                newAgent.onRadius(
+                    size=agentSize,
+                    limit=completion,
+                    speed=agentSpeed
+                )
                 agents.append(newAgent)
 
             nAgent += 1
@@ -155,6 +164,7 @@ def buildShape():
         # voxelCopy.name = 'Voxel-copy-' + str(nt)
         voxelCopy.data = srcObject.data.copy()
         voxelCopy.animation_data_clear()
+        voxelCopy.scale = (t.size, t.size, t.size)
         voxelCopy.location = (t.x, t.y, t.z)
         C.scene.collection.objects.link(voxelCopy)
         progress = nt / len(tree)
@@ -172,9 +182,12 @@ srcObject = create_orig_voxel(
 
 initParticles()
 
+progress = 0
+
 while not buildCompleted:
-    moveParticle()
-    copyParticleToStructure()
+
+    moveParticle(progress)
+    copyParticleToStructure(progress)
     buildCompleted = checkTreeLenght(buildCompleted)
     progress = len(tree) / agentLimit
     update_progress("Computing DLA tree", progress)
