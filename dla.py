@@ -2,6 +2,7 @@ import bpy  # noqa
 import sys
 import os
 import bmesh  # noqa
+import time
 from math import sqrt
 # from mathutils import *
 
@@ -10,29 +11,21 @@ if dir not in sys.path:
     sys.path.append(dir)
 
 from classes.Agent import Agent  # noqa: E731
-from classes.print import printPos  # noqa: E731
+#  from classes.print import print, printPos  # noqa: E731
 
 D = bpy.data
 C = bpy.context
 
-'''
-    Delete everythings in the scene
-
-'''
-objs = []
-for obj in C.scene.objects:
-    if obj.type == 'MESH':
-        objs.append(obj)
-bpy.ops.object.delete({"selected_objects": objs})
 
 '''
     Your creative code here
 
 '''
-agentNum = 6000
-agentLimit = 500
-step = 0.1
-limit = 24
+agentNum = 500
+agentLimit = 200
+AgentSpeed = 0.1
+agentSize = 0.5
+limit = 12
 agents = []
 tree = []
 buildCompleted = False
@@ -42,9 +35,18 @@ tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
 
+debug = False
+
+
+def cleanScene():
+    objs = []
+    for obj in C.scene.objects:
+        if obj.type == 'MESH':
+            objs.append(obj)
+    bpy.ops.object.delete({"selected_objects": objs})
+
 
 def measure(first, second):
-
     locx = second.x - first.x
     locy = second.y - first.y
     locz = second.z - first.z
@@ -53,7 +55,12 @@ def measure(first, second):
     return distance
 
 
-def create_cube(name='default_cube', d=0.1, location=(0, 0, 0), faces=True):
+def create_orig_voxel(
+    name='default_cube',
+    d=0.1,
+    location=(0, 0, 0),
+    faces=True
+):
 
     # Create an empty mesh and the object.
     mesh = bpy.data.meshes.new('Voxel')
@@ -65,68 +72,118 @@ def create_cube(name='default_cube', d=0.1, location=(0, 0, 0), faces=True):
 
     # Construct the bmesh cube and assign it to the blender mesh.
     bm = bmesh.new()
-    bmesh.ops.create_cube(bm, size=step)
+    bmesh.ops.create_cube(bm, size=agentSize)
     bm.to_mesh(mesh)
     bm.free()
 
     return basic_cube
 
 
-srcObject = create_cube(
-    name='origVoxel',
-    d=step,
-    location=(0, 0, 0),
-    faces=True
-)
+def initParticles():
+    if debug:
+        print('Creating particles...')
 
-for a in range(agentNum):
-    agents.append(Agent)
-    agents[a].set(agents[a], limit, step)
+    for a in range(agentNum-1):
+        newAgent = Agent(x=0, y=0, z=0)
+        newAgent.set(limit=limit, speed=AgentSpeed)
+        agents.append(newAgent)
 
 
-while not buildCompleted:
+def moveParticle():
+
+    if debug:
+        print("Moving particles...")
 
     for agent in agents:
+        min = limit * -0.5
+        max = limit * 0.5
 
-        for m in range(6):
+        for m in range(5):
+            agent.move()
 
-            agent.move(agent)
+        if(
+            agent.x < min or
+            agent.y < min or
+            agent.z < min or
+            agent.x > max or
+            agent.y > max or
+            agent.z > max
+        ):
+            agent.set(limit=limit, speed=AgentSpeed)
 
-        for branch in tree:
 
-            if measure(agent, branch) < step:
+def copyParticleToStructure():
+
+    if debug:
+        print("Computing the tree...")
+
+    for branch in tree:
+        nAgent = 0
+        for agent in agents:
+            if measure(agent, branch) <= agentSize:
 
                 agent.stop = True
-                tree.append(Agent)
-                lastTree = len(tree)-1
-                tree[lastTree] = agent
-                treeCount += 1
+                tree.append(agent)
+                del agents[nAgent]
+                newAgent = Agent(x=0, y=0, z=0)
+                newAgent.set(limit=limit, speed=AgentSpeed)
+                agents.append(newAgent)
 
-                if treeCount > agentLimit:
-                    buildCompleted = True
-                    break
-                else:
-                    print(len(tree))
+            nAgent += 1
 
-                agent.set(agent, limit, step)
 
-            if(
-                branch.x < limit * -0.5 or
-                branch.y < limit * -0.5 or
-                branch.z < limit * -0.5 or
-                branch.x > limit * 0.5 or
-                branch.y > limit * 0.5 or
-                branch.z > limit * 0.5
-            ):
-                buildCompleted = True
-                break
+def checkTreeLenght(buildCompleted):
+    if debug:
+        print("Check for tree length...")
 
-else:
+    if len(tree) > agentLimit:
+        buildCompleted = True
 
-    print("Build the DLA shape")
+    for branch in tree:
+        min = limit * -0.5
+        max = limit * 0.5
+        if(
+            branch.x < min or
+            branch.y < min or
+            branch.z < min or
+            branch.x > max or
+            branch.y > max or
+            branch.z > max
+        ):
+            buildCompleted = True
+
+    return buildCompleted
+
+
+def showParticle():
+    srcObject = create_orig_voxel(
+        name='origVoxel',
+        d=agentSize,
+        location=(0, 0, 0),
+        faces=True
+    )
+    na = 0
+    for agent in agents:
+        voxelCopy = srcObject.copy()
+        voxelCopy.name = 'particle-' + str(na)
+        voxelCopy.data = srcObject.data.copy()
+        voxelCopy.animation_data_clear()
+        voxelCopy.location = (agent.x, agent.y, agent.z)
+        C.scene.collection.objects.link(voxelCopy)
+        na += 1
+
+
+def buildShape():
+    print("Building tree...")
+
+    srcObject = create_orig_voxel(
+        name='origVoxel',
+        d=agentSize,
+        location=(0, 0, 0),
+        faces=True
+    )
     nt = 0
     for t in tree:
-
         voxelCopy = srcObject.copy()
         voxelCopy.name = 'Voxel-copy-' + str(nt)
         voxelCopy.data = srcObject.data.copy()
@@ -134,3 +191,22 @@ else:
         voxelCopy.location = (t.x, t.y, t.z)
         C.scene.collection.objects.link(voxelCopy)
         nt += 1
+
+
+cleanScene()
+initParticles()
+
+while not buildCompleted:
+    moveParticle()
+    copyParticleToStructure()
+    buildCompleted = checkTreeLenght(buildCompleted)
+
+    if debug:
+        print(str(len(tree)) + " elements in the tree.")
+
+    if buildCompleted:
+        break
+    # time.sleep(0.5)  # pause of 0.5sec
+buildShape()
+
+# showParticle()
