@@ -1,4 +1,4 @@
-from random import randint, uniform
+import random
 
 
 class Agent:
@@ -10,12 +10,13 @@ class Agent:
         self.z = z
         self.stop = False
 
-    def set(self, limit, step):
-
-        self.x = uniform(limit * -0.5, limit * 0.5)
-        self.y = uniform(limit * -0.5, limit * 0.5)
-        self.z = uniform(limit * -0.5, limit * 0.5)
-        self.step = step
+    def set(self, limit, speed):
+        min = limit * -0.5
+        max = limit * 0.5
+        self.x = random.uniform(min, max)
+        self.y = random.uniform(min, max)
+        self.z = random.uniform(min, max)
+        self.speed = speed
         self.stop = False
 
         return self
@@ -24,19 +25,19 @@ class Agent:
 
         if not self.stop:
 
-            axe = randint(0, 5)
+            axe = random.randint(0, 5)
 
             if axe == 0:
-                self.x += self.step
+                self.x += self.speed
             elif axe == 1:
-                self.y -= self.step
+                self.y -= self.speed
             elif axe == 2:
-                self.y += self.step
+                self.y += self.speed
             elif axe == 3:
-                self.x -= self.step
+                self.x -= self.speed
             elif axe == 4:
-                self.z += self.step
+                self.z += self.speed
             elif axe == 5:
-                self.z -= self.step
+                self.z -= self.speed
 
         return self
