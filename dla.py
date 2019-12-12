@@ -18,11 +18,11 @@ C = bpy.context
     Your creative code here
 
 '''
-agentNum = 5000
-agentLimit = 50000
+agentNum = 50
+agentLimit = 200
 agentSpeed = 1
 agentSize = 1
-limit = 32
+limit = 64
 agents = []
 tree = []
 buildCompleted = False
@@ -66,7 +66,7 @@ def initParticles():
 
     for a in range(agentNum-1):
         newAgent = Agent(size=agentSize, x=0, y=0, z=0)
-        newAgent.set(
+        newAgent.onRadius(
             size=agentSize,
             limit=limit,
             speed=agentSpeed
@@ -98,7 +98,7 @@ def moveParticle(completion):
             agents[a].y > max or
             agents[a].z > max
         ):
-            agents[a] = agents[a].set(
+            agents[a] = agents[a].onRadius(
                 limit=limit,
                 speed=agentSpeed,
                 size=agentSize
@@ -106,20 +106,22 @@ def moveParticle(completion):
 
 
 def copyParticleToStructure(completion):
+
     if debug:
         print("Computing the tree...")
 
     for a in range(len(agents)):
 
         for t in range(len(tree)):
+
             distance = measure(agents[a], tree[t])
-            if distance >= agentSize * 0.75 and distance <= agentSize * 1.25:
+            if distance >= agentSize * 0.95 and distance <= agentSize:
 
                 tree.append(agents[a])
                 del agents[a]
                 newAgent = Agent(x=0, y=0, z=0, size=agentSize)
-                newAgent.set(
-                    limit=completion,
+                newAgent.onRadius(
+                    limit=limit,
                     speed=agentSpeed,
                     size=agentSize
                 )
