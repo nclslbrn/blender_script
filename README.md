@@ -12,5 +12,7 @@ To add new module
 
 ### Add custom module to python path
 
-in .profile or .bash_profile (or if you use zsh shell in .zshrc) add
+In .profile or .bash_profile (or if you use zsh shell in .zshrc) add
 `export PYTHONPATH="$PYTHONPATH:/root/dir/subdir/this-repo-location/"`
+
+You have to add the location of the repo into Blender Preferences / File Paths / Scripts
