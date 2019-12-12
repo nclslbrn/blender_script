@@ -3,6 +3,7 @@ import bmesh  # noqa
 # import time
 # from mathutils import *
 
+
 from functions.updateProgress import update_progress  #  noqa: E731
 from classes.Agent import Agent  # noqa: E731
 from functions.measure import measure  # noqa: E731
@@ -17,11 +18,11 @@ C = bpy.context
     Your creative code here
 
 '''
-agentNum = 50
-agentLimit = 50
-agentSpeed = 0.1
-agentSize = 0.5
-limit = 8
+agentNum = 5000
+agentLimit = 50000
+agentSpeed = 1
+agentSize = 1
+limit = 32
 agents = []
 tree = []
 buildCompleted = False
@@ -30,7 +31,7 @@ tree.append(Agent)
 tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
-tree[0].size = agentSize
+tree[0].size = 1
 
 debug = False
 
@@ -42,7 +43,7 @@ def create_orig_voxel(
     faces=True
 ):
 
-    # Create an empty mesh and the object.
+    # Create an empty mesh and add the object.
     mesh = bpy.data.meshes.new('Voxel')
     basic_cube = bpy.data.objects.new(name, mesh)
     basic_cube.location = location
@@ -72,32 +73,35 @@ def initParticles():
         )
         agents.append(newAgent)
 
+    if debug:
+        print('Particles created')
+
 
 def moveParticle(completion):
 
     if debug:
         print("Moving particles...")
 
-    for agent in agents:
-
+    for a in range(len(agents)):
         min = (limit+1) * -0.5
         max = (limit+1) * 0.5
 
         for m in range(5):
-            agent.move()
+
+            agents[a] = agents[a].move()
 
         if(
-            agent.x < min or
-            agent.y < min or
-            agent.z < min or
-            agent.x > max or
-            agent.y > max or
-            agent.z > max
+            agents[a].x < min or
+            agents[a].y < min or
+            agents[a].z < min or
+            agents[a].x > max or
+            agents[a].y > max or
+            agents[a].z > max
         ):
-            agent.onRadius(
-                size=agentSize,
+            agents[a] = agents[a].set(
                 limit=limit,
-                speed=agentSpeed
+                speed=agentSpeed,
+                size=agentSize
             )
 
 
@@ -105,44 +109,40 @@ def copyParticleToStructure(completion):
     if debug:
         print("Computing the tree...")
 
-    for branch in tree:
+    for a in range(len(agents)):
 
-        nAgent = 0
-        for agent in agents:
+        for t in range(len(tree)):
+            distance = measure(agents[a], tree[t])
+            if distance >= agentSize * 0.75 and distance <= agentSize * 1.25:
 
-            if measure(agent, branch) <= (agent.size + branch.size)/2:
-
-                agent.stop = True
-                tree.append(agent)
-                del agents[nAgent]
-                newAgent = Agent(size=agentSize, x=0, y=0, z=0)
-                newAgent.onRadius(
-                    size=agentSize,
+                tree.append(agents[a])
+                del agents[a]
+                newAgent = Agent(x=0, y=0, z=0, size=agentSize)
+                newAgent.set(
                     limit=completion,
-                    speed=agentSpeed
+                    speed=agentSpeed,
+                    size=agentSize
                 )
                 agents.append(newAgent)
-
-            nAgent += 1
 
 
 def checkTreeLenght(buildCompleted):
     if debug:
         print("Check for tree length...")
-
+    # check for tree array size
     if len(tree) > agentLimit:
         buildCompleted = True
-
-    for branch in tree:
+    # check for tree size
+    for t in range(len(tree)):
         min = limit * -0.5
         max = limit * 0.5
         if(
-            branch.x < min or
-            branch.y < min or
-            branch.z < min or
-            branch.x > max or
-            branch.y > max or
-            branch.z > max
+            tree[t].x < min or
+            tree[t].y < min or
+            tree[t].z < min or
+            tree[t].x > max or
+            tree[t].y > max or
+            tree[t].z > max
         ):
             buildCompleted = True
 
@@ -158,18 +158,16 @@ def buildShape():
         location=(0, 0, 0),
         faces=True
     )
-    nt = 0
-    for t in tree:
+    for t in range(len(tree)):
         voxelCopy = srcObject.copy()
         # voxelCopy.name = 'Voxel-copy-' + str(nt)
         voxelCopy.data = srcObject.data.copy()
         voxelCopy.animation_data_clear()
-        voxelCopy.scale = (t.size, t.size, t.size)
-        voxelCopy.location = (t.x, t.y, t.z)
+        voxelCopy.scale = (tree[t].size, tree[t].size, tree[t].size)
+        voxelCopy.location = (tree[t].x, tree[t].y, tree[t].z)
         C.scene.collection.objects.link(voxelCopy)
-        progress = nt / len(tree)
+        progress = t / len(tree)
         update_progress("Building DLA tree", progress)
-        nt += 1
 
 
 cleanScene('MESH')
