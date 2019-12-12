@@ -10,7 +10,7 @@ To add new module
 
 `./bin/python/3.7m -m pip install <module_name>`
 
-
 ### Add custom module to python path
-in .profile or .bash_profile add
-`export PYTHONPATH=$PYTHONPATH:/root/dir/subdir/this-repo-location/`
+
+in .profile or .bash_profile (or if you use zsh shell in .zshrc) add
+`export PYTHONPATH="$PYTHONPATH:/root/dir/subdir/this-repo-location/"`
