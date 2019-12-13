@@ -9,6 +9,7 @@ from classes.Agent import Agent  # noqa: E731
 from functions.measure import measure  # noqa: E731
 from functions.cleanScene import cleanScene  # noqa: E731
 
+# https://github.com/CodingTrain/website/blob/master/CodingChallenges/CC_034_DLA/P5/sketch.js
 
 D = bpy.data
 C = bpy.context
@@ -66,7 +67,7 @@ def initParticles():
 
     for a in range(agentNum-1):
         newAgent = Agent(size=agentSize, x=0, y=0, z=0)
-        newAgent.onRadius(
+        newAgent.onLimit(
             size=agentSize,
             limit=limit,
             speed=agentSpeed
@@ -98,7 +99,7 @@ def moveParticle(completion):
             agents[a].y > max or
             agents[a].z > max
         ):
-            agents[a] = agents[a].onRadius(
+            agents[a] = agents[a].onLimit(
                 limit=limit,
                 speed=agentSpeed,
                 size=agentSize
@@ -120,7 +121,7 @@ def copyParticleToStructure(completion):
                 tree.append(agents[a])
                 del agents[a]
                 newAgent = Agent(x=0, y=0, z=0, size=agentSize)
-                newAgent.onRadius(
+                newAgent.onLimit(
                     limit=limit,
                     speed=agentSpeed,
                     size=agentSize
