@@ -8,7 +8,7 @@ from functions.updateProgress import update_progress  #  noqa: E731
 from classes.Agent import Agent  # noqa: E731
 from functions.measure import measure  # noqa: E731
 from functions.cleanScene import cleanScene  # noqa: E731
-
+from functions.cubeClones import create_original, clone_original  # noqa: E731
 
 D = bpy.data
 C = bpy.context
@@ -18,11 +18,13 @@ C = bpy.context
     Your creative code here
 
 '''
+isFinal = False
+
 agentNum = 50
-agentLimit = 200
+agentLimit = 200 if isFinal else 50
 agentSpeed = 1
 agentSize = 1
-limit = 64
+limit = 64 if isFinal else 8
 agents = []
 tree = []
 buildCompleted = False
@@ -34,30 +36,6 @@ tree[0].z = 0
 tree[0].size = 1
 
 debug = False
-
-
-def create_orig_voxel(
-    name='default_cube',
-    d=0.1,
-    location=(0, 0, 0),
-    faces=True
-):
-
-    # Create an empty mesh and add the object.
-    mesh = bpy.data.meshes.new('Voxel')
-    basic_cube = bpy.data.objects.new(name, mesh)
-    basic_cube.location = location
-
-    # Add the object into the scene.
-    C.scene.collection.objects.link(basic_cube)
-
-    # Construct the bmesh cube and assign it to the blender mesh.
-    bm = bmesh.new()
-    bmesh.ops.create_cube(bm, size=agentSize)
-    bm.to_mesh(mesh)
-    bm.free()
-
-    return basic_cube
 
 
 def initParticles():
@@ -154,31 +132,22 @@ def checkTreeLenght(buildCompleted):
 def buildShape():
     print("Building tree...")
 
-    srcObject = create_orig_voxel(
+    srcObject = create_original(
         name='origVoxel',
         d=agentSize,
         location=(0, 0, 0),
-        faces=True
+        faces=True,
     )
+
     for t in range(len(tree)):
-        voxelCopy = srcObject.copy()
-        # voxelCopy.name = 'Voxel-copy-' + str(nt)
-        voxelCopy.data = srcObject.data.copy()
-        voxelCopy.animation_data_clear()
-        voxelCopy.scale = (tree[t].size, tree[t].size, tree[t].size)
-        voxelCopy.location = (tree[t].x, tree[t].y, tree[t].z)
-        C.scene.collection.objects.link(voxelCopy)
-        progress = t / len(tree)
-        update_progress("Building DLA tree", progress)
+        clone_original(
+            original=srcObject,
+            size=tree[t].size,
+            location=(tree[t].x, tree[t].y, tree[t].z)
+        )
 
 
 cleanScene('MESH')
-srcObject = create_orig_voxel(
-    name='origVoxel',
-    d=agentSize,
-    location=(0, 0, 0),
-    faces=True
-)
 
 initParticles()
 
