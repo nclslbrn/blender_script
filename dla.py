@@ -8,7 +8,6 @@ from functions.updateProgress import update_progress  #  noqa: E731
 from classes.Agent import Agent  # noqa: E731
 from functions.measure import measure  # noqa: E731
 from functions.cleanScene import cleanScene  # noqa: E731
-from functions.cubeClones import create_original, clone_original  # noqa: E731
 
 
 D = bpy.data
@@ -19,7 +18,8 @@ C = bpy.context
     Your creative code here
 
 '''
-isFinal = False
+isFinal = True
+debug = False
 
 agentNum = 50
 agentLimit = 200 if isFinal else 50
@@ -28,6 +28,7 @@ agentSize = 1
 limit = 64 if isFinal else 8
 agents = []
 tree = []
+lines = []
 buildCompleted = False
 treeCount = 0
 tree.append(Agent)
@@ -35,8 +36,6 @@ tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
 tree[0].size = 1
-
-debug = False
 
 
 def initParticles():
@@ -106,10 +105,14 @@ def copyParticleToStructure(completion):
                 )
                 agents.append(newAgent)
 
+                lines.append([tree[t].x, tree[t].y, tree[t].z])
+                lines.append([agents[a].x, agents[a].y, agents[a].z])
+
 
 def checkTreeLenght(buildCompleted):
     if debug:
         print("Check for tree length...")
+
     # check for tree array size
     if len(tree) > agentLimit:
         buildCompleted = True
@@ -130,22 +133,9 @@ def checkTreeLenght(buildCompleted):
     return buildCompleted
 
 
-def buildShape():
-    print("Building tree...")
-
-    srcObject = create_original(
-        name='origVoxel',
-        d=agentSize,
-        location=(0, 0, 0),
-        faces=True,
-    )
-
-    for t in range(len(tree)):
-        clone_original(
-            original=srcObject,
-            size=tree[t].size,
-            location=(tree[t].x, tree[t].y, tree[t].z)
-        )
+def drawLine(mesh, p1, p2):
+    mesh.verts.extend(p1, p2)
+    mesh.edges.extend(-1, -2)
 
 
 cleanScene('MESH')
@@ -165,6 +155,16 @@ while not buildCompleted:
     if buildCompleted:
         break
 
-update_progress("Computing DLA tree", 1)
-buildShape()
+# buildShape
+mesh = bpy.data.meshes.new("Plane")
+edges = []
+for i in range(0, len(lines), 2):
+    edges.append([i, i+1])
+
+treeObj = bpy.data.objects.new("Plane", mesh)
+treeObj.location = (0, 0, 0)
+C.scene.collection.objects.link(treeObj)
+mesh.from_pydata(lines, edges, [])
+mesh.update(calc_edges=True)
+# bpy.ops.object.convert(target='CURVE')
 update_progress("Building DLA tree", 1)

@@ -39,3 +39,25 @@ def clone_original(original=create_original(), size=1, location=(0, 0, 0)):
     clone.scale = (size, size, size)
     clone.location = (location)
     C.scene.collection.objects.link(clone)
+
+
+'''
+How use it
+
+def buildShape():
+
+    srcObject = create_original(
+        name='origVoxel',
+        d=agentSize,
+        location=(0, 0, 0),
+        faces=True,
+    )
+
+    for t in range(len(tree)):
+        clone_original(
+            original=srcObject,
+            size=tree[t].size,
+            location=(tree[t].x, tree[t].y, tree[t].z)
+        )
+
+'''
