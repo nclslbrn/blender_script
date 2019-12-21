@@ -24,7 +24,7 @@ agentNum = 50
 agentLimit = 200 if isFinal else 50
 agentSpeed = 1
 agentSize = 1
-limit = 64 if isFinal else 8
+limit = 64 if isFinal else 24
 agents = []
 tree = []
 lines = []
@@ -141,6 +141,20 @@ def drawLine(mesh, p1, p2):
     mesh.edges.extend(-1, -2)
 
 
+def makeDecreaseVertSkinRadius(meshName, maxRadius, minRadius):
+
+    treeObj.modifiers.new("Tree skin", 'SKIN')
+    vertices = bpy.data.objects[meshName].data.skin_vertices
+    step = maxRadius - minRadius / len(vertices)
+    index = len(vertices)
+
+    for MeshSkinVertexLayer_name, MeshSkinVertexLayer in vertices.items():
+
+        radius = minRadius + (index * step)
+        MeshSkinVertexLayer.data.foreach_set("radius", radius)
+        index -= 1
+
+
 cleanScene('MESH')
 
 initParticles()
@@ -158,27 +172,27 @@ while not buildCompleted:
     if buildCompleted:
         break
 
-mesh = bpy.data.meshes.new("Plane")
+
+# build the mesh
+meshName = "DLA-Tree"
+mesh = bpy.data.meshes.new(meshName)
 edges = []
 for i in range(0, len(lines), 2):
     edges.append([i, i+1])
 
-
-treeObj = bpy.data.objects.new("Plane", mesh)
+treeObj = bpy.data.objects.new(meshName, mesh)
 treeObj.location = (0, 0, 0)
 C.scene.collection.objects.link(treeObj)
 mesh.from_pydata(lines, edges, [])
 mesh.update(calc_edges=True)
+bm = bmesh.new()
+bm.from_mesh(mesh)
+bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
+bm.to_mesh(mesh)
+mesh.update()
+bm.clear()
+bm.free()
 
-# remove double verts
-C.view_layer.objects.active = treeObj  # set active object
-bpy.ops.object.mode_set(mode='EDIT')  # switch to edit mode
-bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.mesh.remove_doubles()  # remove doubles
-# bpy.ops.mesh.tris_convert_to_quads() #tris to quads
-bpy.ops.object.mode_set(mode='OBJECT')  # switch to object mode
-
-bmesh.ops.remove_doubles(mesh, verts=mesh.verts[:], dist=0.001)
-# mod = obj.modifiers.new("Tree skin", 'SKIN')
+makeDecreaseVertSkinRadius(meshName, 1, 0.2)
 
 update_progress("Building DLA tree", 1)
