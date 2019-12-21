@@ -180,4 +180,12 @@ bm.free()
 
 makeDecreaseVertSkinRadius(treeObj, meshName, 0.1, 0.001)
 
+'''
+TODO
+1/ Add Bevel modifier (width=0.01, clamp_overlap=False, loop_slide=False)
+2/ Add EdgeSplit modifier (split_angle=90)
+3/ Add Solidify modifier (thickness=0.04)
+4/ Add Materials and assign it into Bevel and Solidy modifier material slots
+'''
+
 update_progress("Building DLA tree", 1)
