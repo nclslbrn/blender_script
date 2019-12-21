@@ -35,7 +35,6 @@ def clone_original(original=create_original(), size=1, location=(0, 0, 0)):
     clone = original.copy()
     # clone.name = 'Voxel-copy-' + str(nt)
     clone.data = original.data.copy()
-    clone.animation_data_clear()
     clone.scale = (size, size, size)
     clone.location = (location)
     C.scene.collection.objects.link(clone)

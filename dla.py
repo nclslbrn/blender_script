@@ -8,7 +8,7 @@ from functions.updateProgress import update_progress  #  noqa: E731
 from classes.Agent import Agent  # noqa: E731
 from functions.measure import measure  # noqa: E731
 from functions.cleanScene import cleanScene  # noqa: E731
-
+# from functions.cubeClones import create_original, clone_original
 
 D = bpy.data
 C = bpy.context
@@ -18,7 +18,7 @@ C = bpy.context
     Your creative code here
 
 '''
-isFinal = True
+isFinal = False
 debug = False
 
 agentNum = 50
@@ -95,7 +95,14 @@ def copyParticleToStructure(completion):
             distance = measure(agents[a], tree[t])
             if distance >= agentSize * 0.95 and distance <= agentSize:
 
+                # Add the agent to the tree
                 tree.append(agents[a])
+
+                # Add thes to coordinate to lines
+                lines.append([tree[t].x, tree[t].y, tree[t].z])
+                lines.append([agents[a].x, agents[a].y, agents[a].z])
+
+                # reset the agent
                 del agents[a]
                 newAgent = Agent(x=0, y=0, z=0, size=agentSize)
                 newAgent.onLimit(
@@ -104,9 +111,6 @@ def copyParticleToStructure(completion):
                     size=agentSize
                 )
                 agents.append(newAgent)
-
-                lines.append([tree[t].x, tree[t].y, tree[t].z])
-                lines.append([agents[a].x, agents[a].y, agents[a].z])
 
 
 def checkTreeLenght(buildCompleted):
@@ -154,12 +158,27 @@ while not buildCompleted:
 
     if buildCompleted:
         break
-
+'''
 # buildShape
+cube = create_original(
+    name="original_cube",
+    d=1,
+    location=(0, 0, 0),
+    faces=True
+)
+'''
 mesh = bpy.data.meshes.new("Plane")
 edges = []
 for i in range(0, len(lines), 2):
     edges.append([i, i+1])
+'''
+for i in range(len(tree)):
+    clone_original(
+        original=cube,
+        size=agentSize,
+        location=(tree[i].x, tree[i].y, tree[i].z)
+    )
+'''
 
 treeObj = bpy.data.objects.new("Plane", mesh)
 treeObj.location = (0, 0, 0)
