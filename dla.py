@@ -1,13 +1,12 @@
 import bpy  # noqa
 import bmesh  # noqa
-# import time
-# from mathutils import *
 
 
-from functions.updateProgress import update_progress  #  noqa: E731
-from classes.Agent import Agent  # noqa: E731
-from functions.measure import measure  # noqa: E731
-from functions.cleanScene import cleanScene  # noqa: E731
+from functions.updateProgress import update_progress
+from classes.Agent import Agent
+from functions.measure import measure
+from functions.cleanScene import cleanScene
+from functions.skinModifierSetVertexRadius import makeDecreaseVertSkinRadius
 
 D = bpy.data
 C = bpy.context
@@ -24,7 +23,7 @@ agentNum = 50
 agentLimit = 200 if isFinal else 50
 agentSpeed = 1
 agentSize = 1
-limit = 64 if isFinal else 24
+limit = 64 if isFinal else 32
 agents = []
 tree = []
 lines = []
@@ -141,20 +140,6 @@ def drawLine(mesh, p1, p2):
     mesh.edges.extend(-1, -2)
 
 
-def makeDecreaseVertSkinRadius(meshName, maxRadius, minRadius):
-
-    treeObj.modifiers.new("Tree skin", 'SKIN')
-    vertices = bpy.data.objects[meshName].data.skin_vertices
-    step = maxRadius - minRadius / len(vertices)
-    index = len(vertices)
-
-    for MeshSkinVertexLayer_name, MeshSkinVertexLayer in vertices.items():
-
-        radius = minRadius + (index * step)
-        MeshSkinVertexLayer.data.foreach_set("radius", radius)
-        index -= 1
-
-
 cleanScene('MESH')
 
 initParticles()
@@ -193,6 +178,6 @@ mesh.update()
 bm.clear()
 bm.free()
 
-makeDecreaseVertSkinRadius(meshName, 1, 0.2)
+makeDecreaseVertSkinRadius(treeObj, meshName, 0.1, 0.001)
 
 update_progress("Building DLA tree", 1)
