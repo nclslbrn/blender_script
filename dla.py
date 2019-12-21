@@ -8,7 +8,6 @@ from functions.updateProgress import update_progress  #  noqa: E731
 from classes.Agent import Agent  # noqa: E731
 from functions.measure import measure  # noqa: E731
 from functions.cleanScene import cleanScene  # noqa: E731
-# from functions.cubeClones import create_original, clone_original
 
 D = bpy.data
 C = bpy.context
@@ -158,32 +157,28 @@ while not buildCompleted:
 
     if buildCompleted:
         break
-'''
-# buildShape
-cube = create_original(
-    name="original_cube",
-    d=1,
-    location=(0, 0, 0),
-    faces=True
-)
-'''
+
 mesh = bpy.data.meshes.new("Plane")
 edges = []
 for i in range(0, len(lines), 2):
     edges.append([i, i+1])
-'''
-for i in range(len(tree)):
-    clone_original(
-        original=cube,
-        size=agentSize,
-        location=(tree[i].x, tree[i].y, tree[i].z)
-    )
-'''
+
 
 treeObj = bpy.data.objects.new("Plane", mesh)
 treeObj.location = (0, 0, 0)
 C.scene.collection.objects.link(treeObj)
 mesh.from_pydata(lines, edges, [])
 mesh.update(calc_edges=True)
-# bpy.ops.object.convert(target='CURVE')
+
+# remove double verts
+C.view_layer.objects.active = treeObj  # set active object
+bpy.ops.object.mode_set(mode='EDIT')  # switch to edit mode
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.mesh.remove_doubles()  # remove doubles
+# bpy.ops.mesh.tris_convert_to_quads() #tris to quads
+bpy.ops.object.mode_set(mode='OBJECT')  # switch to object mode
+
+bmesh.ops.remove_doubles(mesh, verts=mesh.verts[:], dist=0.001)
+# mod = obj.modifiers.new("Tree skin", 'SKIN')
+
 update_progress("Building DLA tree", 1)
