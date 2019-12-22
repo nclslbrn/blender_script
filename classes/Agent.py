@@ -12,20 +12,18 @@ class Agent:
         self.size = size
         self.stop = False
 
-    def set(self, limit, speed, size):
+    def set(self, limit, size):
         min = limit * -0.5
         max = limit * 0.5
         self.x = uniform(min, max)
         self.y = uniform(min, max)
         self.z = uniform(min, max)
-        self.speed = speed
         self.size = size
         self.stop = False
 
         return self
 
-    def onLimit(self, limit, speed, size):
-
+    def onLimit(self, limit, size):
         min = limit * -0.4
         max = limit * 0.4
         randSide = randint(0, 6)
@@ -54,40 +52,35 @@ class Agent:
             self.y = uniform(min, max)
             self.z = max
 
-        self.speed = speed
         self.size = size
         self.stop = False
         return self
 
-    def onRadius(self, limit, speed, size):
+    def onRadius(self, limit, size):
         radius = limit / 2
         angle = uniform(0, pi * 2)
         self.x = radius * cos(angle)
         self.y = radius * sin(angle)
         self.z = radius * cos(angle)
-        self.speed = speed
         self.size = size
         self.stop = False
 
         return self
 
     def move(self):
-
         if not self.stop:
-
             axe = randint(0, 5)
-
             if axe == 0:
-                self.x += self.speed
+                self.x += self.size
             elif axe == 1:
-                self.y -= self.speed
+                self.y -= self.size
             elif axe == 2:
-                self.y += self.speed
+                self.y += self.size
             elif axe == 3:
-                self.x -= self.speed
+                self.x -= self.size
             elif axe == 4:
-                self.z += self.speed
+                self.z += self.size
             elif axe == 5:
-                self.z -= self.speed
+                self.z -= self.size
 
         return self

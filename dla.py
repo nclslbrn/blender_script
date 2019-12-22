@@ -7,7 +7,7 @@ from classes.Agent import Agent
 from functions.measure import measure
 from functions.cleanScene import cleanScene
 from functions.skinModifierSetVertexRadius import makeDecreaseVertSkinRadius
-
+from functions.mechify import mechify
 D = bpy.data
 C = bpy.context
 
@@ -20,20 +20,22 @@ isFinal = False
 debug = False
 
 agentNum = 50
-agentLimit = 200 if isFinal else 50
-agentSpeed = 1
+agentLimit = 200 if isFinal else 80
 agentSize = 1
-limit = 64 if isFinal else 32
+limit = 128 if isFinal else 64
+shrink = 0.97
 agents = []
 tree = []
 lines = []
+vertices_radius = []
 buildCompleted = False
 treeCount = 0
 tree.append(Agent)
 tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
-tree[0].size = 1
+tree[0].size = 0.1
+vertices_radius.append(1)
 
 
 def initParticles():
@@ -44,8 +46,7 @@ def initParticles():
         newAgent = Agent(size=agentSize, x=0, y=0, z=0)
         newAgent.onLimit(
             size=agentSize,
-            limit=limit,
-            speed=agentSpeed
+            limit=limit
         )
         agents.append(newAgent)
 
@@ -76,7 +77,6 @@ def moveParticle(completion):
         ):
             agents[a] = agents[a].onLimit(
                 limit=limit,
-                speed=agentSpeed,
                 size=agentSize
             )
 
@@ -86,12 +86,14 @@ def copyParticleToStructure(completion):
     if debug:
         print("Computing the tree...")
 
+    currentSize = agentSize
+
     for a in range(len(agents)):
 
         for t in range(len(tree)):
 
             distance = measure(agents[a], tree[t])
-            if distance >= agentSize * 0.95 and distance <= agentSize:
+            if distance < (agents[a].size + tree[t].size)*2:
 
                 # Add the agent to the tree
                 tree.append(agents[a])
@@ -99,16 +101,19 @@ def copyParticleToStructure(completion):
                 # Add thes to coordinate to lines
                 lines.append([tree[t].x, tree[t].y, tree[t].z])
                 lines.append([agents[a].x, agents[a].y, agents[a].z])
+                vertices_radius.append(agents[a].size)
 
                 # reset the agent
+                currentSize *= shrink
                 del agents[a]
-                newAgent = Agent(x=0, y=0, z=0, size=agentSize)
+                newAgent = Agent(x=0, y=0, z=0, size=currentSize)
                 newAgent.onLimit(
                     limit=limit,
-                    speed=agentSpeed,
-                    size=agentSize
+                    size=currentSize
                 )
                 agents.append(newAgent)
+
+    return currentSize
 
 
 def checkTreeLenght(buildCompleted):
@@ -149,7 +154,7 @@ progress = 0
 while not buildCompleted:
 
     moveParticle(progress)
-    copyParticleToStructure(progress)
+    agentSize = copyParticleToStructure(progress)
     buildCompleted = checkTreeLenght(buildCompleted)
     progress = len(tree) / agentLimit
     update_progress("Computing DLA tree", progress)
@@ -164,12 +169,15 @@ mesh = bpy.data.meshes.new(meshName)
 edges = []
 for i in range(0, len(lines), 2):
     edges.append([i, i+1])
-
+# Create tree object
 treeObj = bpy.data.objects.new(meshName, mesh)
 treeObj.location = (0, 0, 0)
+# Add it to th escene collection
 C.scene.collection.objects.link(treeObj)
+# Create a mesh
 mesh.from_pydata(lines, edges, [])
 mesh.update(calc_edges=True)
+# Remove double vertices
 bm = bmesh.new()
 bm.from_mesh(mesh)
 bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
@@ -177,15 +185,10 @@ bm.to_mesh(mesh)
 mesh.update()
 bm.clear()
 bm.free()
-
-makeDecreaseVertSkinRadius(treeObj, meshName, 0.1, 0.001)
-
-'''
-TODO
-1/ Add Bevel modifier (width=0.01, clamp_overlap=False, loop_slide=False)
-2/ Add EdgeSplit modifier (split_angle=90)
-3/ Add Solidify modifier (thickness=0.04)
-4/ Add Materials and assign it into Bevel and Solidy modifier material slots
-'''
+# Add skin modifier and assign tree[].size to vertice radius
+# setupVertSkinRadius(treeObj, meshName, vertices_radius)
+makeDecreaseVertSkinRadius(treeObj, meshName, 2, 0.01)
+# Add split edge, bevel and solidify modifier
+mechify(treeObj)
 
 update_progress("Building DLA tree", 1)
