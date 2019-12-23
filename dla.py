@@ -6,7 +6,7 @@ from functions.updateProgress import update_progress
 from classes.Agent import Agent
 from functions.measure import measure
 from functions.cleanScene import cleanScene
-from functions.skinModifierSetVertexRadius import makeDecreaseVertSkinRadius
+from functions.skinModifierSetVertexRadius import setupVertSkinRadius
 from functions.mechify import mechify
 D = bpy.data
 C = bpy.context
@@ -19,11 +19,11 @@ C = bpy.context
 isFinal = False
 debug = False
 
-agentNum = 50
-agentLimit = 200 if isFinal else 80
-agentSize = 1
-limit = 128 if isFinal else 64
-shrink = 0.97
+agentNum = 75
+agentLimit = 200 if isFinal else 500
+agentSize = 3
+limit = 128 if isFinal else 42
+shrink = 0.99
 agents = []
 tree = []
 lines = []
@@ -34,8 +34,8 @@ tree.append(Agent)
 tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
-tree[0].size = 0.1
-vertices_radius.append(1)
+tree[0].size = agentSize
+vertices_radius.append(agentSize)
 
 
 def initParticles():
@@ -93,7 +93,8 @@ def copyParticleToStructure(completion):
         for t in range(len(tree)):
 
             distance = measure(agents[a], tree[t])
-            if distance < (agents[a].size + tree[t].size)*2:
+
+            if distance <= agents[a].size + tree[t].size:
 
                 # Add the agent to the tree
                 tree.append(agents[a])
@@ -186,8 +187,8 @@ mesh.update()
 bm.clear()
 bm.free()
 # Add skin modifier and assign tree[].size to vertice radius
-# setupVertSkinRadius(treeObj, meshName, vertices_radius)
-makeDecreaseVertSkinRadius(treeObj, meshName, 2, 0.01)
+setupVertSkinRadius(treeObj, meshName, vertices_radius)
+# makeDecreaseVertSkinRadius(treeObj, meshName, 0.8, 0.1)
 # Add split edge, bevel and solidify modifier
 mechify(treeObj)
 
