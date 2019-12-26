@@ -6,8 +6,9 @@ from functions.updateProgress import update_progress
 from classes.Agent import Agent
 from functions.measure import measure
 from functions.cleanScene import cleanScene
-from functions.skinModifierSetVertexRadius import setupVertSkinRadius
-from functions.mechify import mechify
+from functions.dodecahedron import createDodecahedron, cloneDodecahedron
+# from functions.skinModifierSetVertexRadius import setupVertSkinRadius
+# from functions.mechify import mechify
 D = bpy.data
 C = bpy.context
 
@@ -20,13 +21,13 @@ isFinal = False
 debug = False
 
 agentNum = 75
-agentLimit = 200 if isFinal else 500
-agentSize = 3
-limit = 128 if isFinal else 42
-shrink = 0.99
+agentLimit = 500 if isFinal else 200
+agentSize = 3 if isFinal else 0.5
+limit = 42 if isFinal else 16
+shrink = 0.97
 agents = []
 tree = []
-lines = []
+# lines = []
 vertices_radius = []
 buildCompleted = False
 treeCount = 0
@@ -63,7 +64,7 @@ def moveParticle(completion):
         min = (limit+1) * -0.5
         max = (limit+1) * 0.5
 
-        for m in range(5):
+        for m in range(2):
 
             agents[a] = agents[a].move()
 
@@ -94,14 +95,14 @@ def copyParticleToStructure(completion):
 
             distance = measure(agents[a], tree[t])
 
-            if distance <= agents[a].size + tree[t].size:
+            if distance <= (agents[a].size + tree[t].size)*2:
 
                 # Add the agent to the tree
                 tree.append(agents[a])
 
                 # Add thes to coordinate to lines
-                lines.append([tree[t].x, tree[t].y, tree[t].z])
-                lines.append([agents[a].x, agents[a].y, agents[a].z])
+                # lines.append([tree[t].x, tree[t].y, tree[t].z])
+                # lines.append([agents[a].x, agents[a].y, agents[a].z])
                 vertices_radius.append(agents[a].size)
 
                 # reset the agent
@@ -163,7 +164,7 @@ while not buildCompleted:
     if buildCompleted:
         break
 
-
+'''
 # build the mesh
 meshName = "DLA-Tree"
 mesh = bpy.data.meshes.new(meshName)
@@ -173,7 +174,7 @@ for i in range(0, len(lines), 2):
 # Create tree object
 treeObj = bpy.data.objects.new(meshName, mesh)
 treeObj.location = (0, 0, 0)
-# Add it to th escene collection
+# Add it to the scene collection
 C.scene.collection.objects.link(treeObj)
 # Create a mesh
 mesh.from_pydata(lines, edges, [])
@@ -186,10 +187,20 @@ bm.to_mesh(mesh)
 mesh.update()
 bm.clear()
 bm.free()
+'''
+
 # Add skin modifier and assign tree[].size to vertice radius
-setupVertSkinRadius(treeObj, meshName, vertices_radius)
+# setupVertSkinRadius(treeObj, meshName, vertices_radius)
 # makeDecreaseVertSkinRadius(treeObj, meshName, 0.8, 0.1)
 # Add split edge, bevel and solidify modifier
-mechify(treeObj)
+# mechify(treeObj)
+
+ddObj = createDodecahedron()
+for i in range(len(tree)):
+    cloneDodecahedron(
+        original=ddObj,
+        size=tree[i].size,
+        location=(tree[i].x, tree[i].y, tree[i].z)
+    )
 
 update_progress("Building DLA tree", 1)
