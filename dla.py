@@ -22,9 +22,10 @@ writeAndCompute = True
 
 agentNum = 100
 agentLimit = 10000
-agentSize = 0.25
-limit = 12
-shrink = 0.995
+agentSize = 1.0
+limit = 24
+shrink = 0.9995
+expand = 1.05
 agents = []
 tree = []
 vertices_radius = []
@@ -38,8 +39,6 @@ tree[0].size = agentSize
 
 
 def initParticles():
-    if debug:
-        print('Creating particles...')
 
     for a in range(agentNum-1):
         newAgent = Agent(size=agentSize, x=0, y=0, z=0)
@@ -49,41 +48,31 @@ def initParticles():
         )
         agents.append(newAgent)
 
-    if debug:
-        print('Particles created')
-
 
 def moveParticle(completion):
-
-    if debug:
-        print("Moving particles...")
 
     for a in range(len(agents)):
         min = (limit+1) * -0.5
         max = (limit+1) * 0.5
 
-        # for m in range(12):
+        for m in range(24):
+            agents[a] = agents[a].move()
 
-        agents[a] = agents[a].move()
-
-        if(
-            agents[a].x < min or
-            agents[a].y < min or
-            agents[a].z < min or
-            agents[a].x > max or
-            agents[a].y > max or
-            agents[a].z > max
-        ):
-            agents[a] = agents[a].onLimit(
-                limit=limit,
-                size=agentSize
-            )
+            if(
+                agents[a].x < min or
+                agents[a].y < min or
+                agents[a].z < min or
+                agents[a].x > max or
+                agents[a].y > max or
+                agents[a].z > max
+            ):
+                agents[a] = agents[a].onLimit(
+                    limit=limit,
+                    size=agentSize
+                )
 
 
 def copyParticleToStructure(completion):
-
-    if debug:
-        print("Computing the tree...")
 
     currentSize = agentSize
     currentLimit = limit
@@ -100,7 +89,11 @@ def copyParticleToStructure(completion):
                 tree.append(agents[a])
 
                 # reset the agent
-                currentSize *= shrink
+                if currentSize > 0.05:
+                    currentSize *= shrink
+                if currentLimit < 74:
+                    currentLimit *= expand
+
                 del agents[a]
                 newAgent = Agent(x=0, y=0, z=0, size=currentSize)
                 newAgent.onLimit(
@@ -109,32 +102,23 @@ def copyParticleToStructure(completion):
                 )
                 agents.append(newAgent)
 
-                if len(tree) % 25 == 0:
-                    currentLimit *= 1.05
+            if debug:
+                print(
+                    "Limit: {} | Size : {} | Obj : {}/{}".format(
+                        currentLimit,
+                        currentSize,
+                        len(tree),
+                        agentLimit
+                    )
+                )
 
     return {currentSize, currentLimit}
 
 
 def checkTreeLenght(buildCompleted):
-    if debug:
-        print("Check for tree length...")
 
-    # check for tree array size
     if len(tree) > agentLimit:
         buildCompleted = True
-    # check for tree size
-    """ for t in range(len(tree)):
-        min = limit * -0.5
-        max = limit * 0.5
-        if(
-            tree[t].x < min or
-            tree[t].y < min or
-            tree[t].z < min or
-            tree[t].x > max or
-            tree[t].y > max or
-            tree[t].z > max
-        ):
-            buildCompleted = True """
 
     return buildCompleted
 
@@ -155,8 +139,10 @@ if writeAndCompute:
         moveParticle(progress)
         agentSize, limit = copyParticleToStructure(progress)
         buildCompleted = checkTreeLenght(buildCompleted)
-        progress = len(tree) / agentLimit
-        update_progress("Computing DLA tree", progress)
+
+        if not debug:
+            progress = len(tree) / agentLimit
+            update_progress("Computing DLA tree", progress)
 
         if buildCompleted:
             break
@@ -175,10 +161,18 @@ if writeAndCompute:
 
 with open('../data-output/tree.csv') as File:
     reader = csv.reader(File)
+    index = 0
+
     for row in reader:
         cloneDodecahedron(
             size=float(row[0]),
             location=(float(row[1]), float(row[2]), float(row[3]))
         )
+        index += 1
 
-update_progress("Building DLA tree", 1)
+        if not debug:
+            progress = index / agentLimit
+            update_progress("Building DLA tree", progress)
+
+if not debug:
+    update_progress("Building DLA tree", 1)
