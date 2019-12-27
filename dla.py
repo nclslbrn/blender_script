@@ -20,8 +20,8 @@ C = bpy.context
 debug = False
 writeAndCompute = True
 
-agentNum = 50
-agentLimit = 1000
+agentNum = 100
+agentLimit = 10000
 agentSize = 0.25
 limit = 12
 shrink = 0.995
@@ -62,9 +62,9 @@ def moveParticle(completion):
         min = (limit+1) * -0.5
         max = (limit+1) * 0.5
 
-        for m in range(2):
+        # for m in range(12):
 
-            agents[a] = agents[a].move()
+        agents[a] = agents[a].move()
 
         if(
             agents[a].x < min or
@@ -86,6 +86,7 @@ def copyParticleToStructure(completion):
         print("Computing the tree...")
 
     currentSize = agentSize
+    currentLimit = limit
 
     for a in range(len(agents)):
 
@@ -108,7 +109,10 @@ def copyParticleToStructure(completion):
                 )
                 agents.append(newAgent)
 
-    return currentSize
+                if len(tree) % 25 == 0:
+                    currentLimit *= 1.05
+
+    return {currentSize, currentLimit}
 
 
 def checkTreeLenght(buildCompleted):
@@ -149,7 +153,7 @@ if writeAndCompute:
     while not buildCompleted:
 
         moveParticle(progress)
-        agentSize = copyParticleToStructure(progress)
+        agentSize, limit = copyParticleToStructure(progress)
         buildCompleted = checkTreeLenght(buildCompleted)
         progress = len(tree) / agentLimit
         update_progress("Computing DLA tree", progress)
