@@ -6,10 +6,11 @@
 # http://www.rwgra    clone = original.copy()
 # clone.name = 'Voxel-copy-' + str(nt)
 import math
+from random import uniform
 import bpy  # noqa
 
 
-def createDodecahedron():
+def createDodecahedron(size=1):
     # phi is the Golden Ratio = ~1.618
     phi = (1 + math.sqrt(5)) / 2.0
     phi2 = phi * phi
@@ -65,6 +66,7 @@ def createDodecahedron():
 
     ob = bpy.data.objects.new("Dodecahedron", me)
     ob.location = (0, 0, 0)
+    ob.scale = (size, size, size)
     # bpy.context.scene.objects.link(ob)
     bpy.context.scene.collection.objects.link(ob)
     me.from_pydata(coords, [], faces)
@@ -74,13 +76,20 @@ def createDodecahedron():
 
 
 def cloneDodecahedron(
-    original=createDodecahedron(),
     size=1,
     location=(0, 0, 0)
 ):
-    clone = original.copy()
-    # clone.name = 'Voxel-copy-' + str(nt)
-    clone.data = original.data.copy()
-    clone.scale = (size, size, size)
-    clone.location = (location)
-    bpy.context.scene.collection.objects.link(clone)
+    originalObject = bpy.data.objects.get('Dodecahedron')
+
+    if originalObject:
+        clone = bpy.data.objects.new('Dodecahedron', originalObject.data)
+        # clone.name = 'Voxel-copy-' + str(nt)
+        # clone.data = original.data.copy()
+        clone.scale = (size, size, size)
+        clone.rotation_euler = (
+            uniform(0, 1) * math.pi * 2,
+            uniform(0, 1) * math.pi * 2,
+            uniform(0, 1) * math.pi * 2
+        )
+        clone.location = (location)
+        bpy.context.scene.collection.objects.link(clone)

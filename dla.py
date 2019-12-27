@@ -1,6 +1,6 @@
 import bpy  # noqa
 import bmesh  # noqa
-
+import csv
 
 from functions.updateProgress import update_progress
 from classes.Agent import Agent
@@ -17,26 +17,24 @@ C = bpy.context
     Your creative code here
 
 '''
-isFinal = False
 debug = False
+writeAndCompute = True
 
-agentNum = 75
-agentLimit = 500 if isFinal else 200
-agentSize = 3 if isFinal else 0.5
-limit = 42 if isFinal else 16
-shrink = 0.97
+agentNum = 50
+agentLimit = 1000
+agentSize = 0.25
+limit = 12
+shrink = 0.995
 agents = []
 tree = []
-# lines = []
 vertices_radius = []
-buildCompleted = False
+buildCompleted = False if writeAndCompute else False
 treeCount = 0
 tree.append(Agent)
 tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
 tree[0].size = agentSize
-vertices_radius.append(agentSize)
 
 
 def initParticles():
@@ -95,15 +93,10 @@ def copyParticleToStructure(completion):
 
             distance = measure(agents[a], tree[t])
 
-            if distance <= (agents[a].size + tree[t].size)*2:
+            if distance <= (agents[a].size + tree[t].size)*4:
 
                 # Add the agent to the tree
                 tree.append(agents[a])
-
-                # Add thes to coordinate to lines
-                # lines.append([tree[t].x, tree[t].y, tree[t].z])
-                # lines.append([agents[a].x, agents[a].y, agents[a].z])
-                vertices_radius.append(agents[a].size)
 
                 # reset the agent
                 currentSize *= shrink
@@ -126,7 +119,7 @@ def checkTreeLenght(buildCompleted):
     if len(tree) > agentLimit:
         buildCompleted = True
     # check for tree size
-    for t in range(len(tree)):
+    """ for t in range(len(tree)):
         min = limit * -0.5
         max = limit * 0.5
         if(
@@ -137,7 +130,7 @@ def checkTreeLenght(buildCompleted):
             tree[t].y > max or
             tree[t].z > max
         ):
-            buildCompleted = True
+            buildCompleted = True """
 
     return buildCompleted
 
@@ -148,59 +141,40 @@ def drawLine(mesh, p1, p2):
 
 
 cleanScene('MESH')
-
 initParticles()
-
+ddObj = createDodecahedron(size=agentSize)
 progress = 0
 
-while not buildCompleted:
+if writeAndCompute:
+    while not buildCompleted:
 
-    moveParticle(progress)
-    agentSize = copyParticleToStructure(progress)
-    buildCompleted = checkTreeLenght(buildCompleted)
-    progress = len(tree) / agentLimit
-    update_progress("Computing DLA tree", progress)
+        moveParticle(progress)
+        agentSize = copyParticleToStructure(progress)
+        buildCompleted = checkTreeLenght(buildCompleted)
+        progress = len(tree) / agentLimit
+        update_progress("Computing DLA tree", progress)
 
-    if buildCompleted:
-        break
+        if buildCompleted:
+            break
 
-'''
-# build the mesh
-meshName = "DLA-Tree"
-mesh = bpy.data.meshes.new(meshName)
-edges = []
-for i in range(0, len(lines), 2):
-    edges.append([i, i+1])
-# Create tree object
-treeObj = bpy.data.objects.new(meshName, mesh)
-treeObj.location = (0, 0, 0)
-# Add it to the scene collection
-C.scene.collection.objects.link(treeObj)
-# Create a mesh
-mesh.from_pydata(lines, edges, [])
-mesh.update(calc_edges=True)
-# Remove double vertices
-bm = bmesh.new()
-bm.from_mesh(mesh)
-bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
-bm.to_mesh(mesh)
-mesh.update()
-bm.clear()
-bm.free()
-'''
+    # Storing tree coordinnates
+    with open('../data-output/tree.csv', 'w') as dataFile:
+        writer = csv.writer(dataFile)
+        for i in range(len(tree)):
+            writer.writerow([
+                tree[i].size,
+                tree[i].x,
+                tree[i].y,
+                tree[i].z
+            ])
 
-# Add skin modifier and assign tree[].size to vertice radius
-# setupVertSkinRadius(treeObj, meshName, vertices_radius)
-# makeDecreaseVertSkinRadius(treeObj, meshName, 0.8, 0.1)
-# Add split edge, bevel and solidify modifier
-# mechify(treeObj)
 
-ddObj = createDodecahedron()
-for i in range(len(tree)):
-    cloneDodecahedron(
-        original=ddObj,
-        size=tree[i].size,
-        location=(tree[i].x, tree[i].y, tree[i].z)
-    )
+with open('../data-output/tree.csv') as File:
+    reader = csv.reader(File)
+    for row in reader:
+        cloneDodecahedron(
+            size=float(row[0]),
+            location=(float(row[1]), float(row[2]), float(row[3]))
+        )
 
 update_progress("Building DLA tree", 1)
