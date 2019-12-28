@@ -16,23 +16,23 @@ D = bpy.data
 C = bpy.context
 
 # display agentSize and limit size (and hide progress)
-debug = False
+debug = True
 # Used to build DLA from CSV file
 writeAndCompute = True
 # How many agents live at same time
 agentNum = 100
 # How many agents will stuck on tree
-agentLimit = 500
+agentLimit = 100
 
 # Distance limit for the moves of the agents
-limit = 18
+limit = 12
 # Factor to increase limit size
 expand = 1.001
-maxLimit = 240
+maxLimit = 120
 # Size of the first agent (make decrease with time)
 agentSize = 1.0
 # Factor to decrease agents size
-shrink = 0.98
+shrink = 0.95
 minAgentSize = 0.01
 
 # Array to store moving agent
@@ -95,45 +95,51 @@ def copyAgentsToTree(completion):
 
     for a in range(len(agents)):
 
-        for m in range(4):
+        if not checkTreeLenght(computationDone):
 
-            agents[a] = agents[a].move()
+            for m in range(12):
 
-            for t in range(len(tree)):
+                agents[a] = agents[a].move()
 
-                distance = measure(agents[a], tree[t])
+                for t in range(len(tree)):
 
-                if distance <= agents[a].size + tree[t].size:
+                    distance = measure(agents[a], tree[t])
 
-                    # Add the agent to the tree
-                    tree.append(agents[a])
+                    if distance <= (agents[a].size + tree[t].size) * 2:
 
-                    # change constants
-                    if currentSize > minAgentSize:
-                        currentSize *= shrink
-                    if currentLimit < maxLimit:
-                        currentLimit *= expand
+                        # Add the agent to the tree
+                        tree.append(agents[a])
 
-                    # reset the agent
-                    del agents[a]
-                    newAgent = Agent(x=0, y=0, z=0, size=currentSize)
-                    newAgent.onLimit(
-                        limit=limit,
-                        size=currentSize
-                    )
-                    agents.append(newAgent)
+                        # change constants
+                        if currentSize > minAgentSize:
+                            currentSize *= shrink
+                        if currentLimit < maxLimit:
+                            currentLimit *= expand
 
-                if debug:
-                    print(
-                        "Limit: {} | Size : {} | Obj : {}/{}".format(
-                            currentLimit,
-                            currentSize,
-                            len(tree),
-                            agentLimit
+                        # reset the agent
+                        del agents[a]
+                        newAgent = Agent(x=0, y=0, z=0, size=currentSize)
+                        newAgent.onLimit(
+                            limit=limit,
+                            size=currentSize
                         )
-                    )
+                        agents.append(newAgent)
 
-    return {currentSize, currentLimit}
+                    if debug:
+                        print(
+                            "Limit: {} | Size : {} | Obj : {}/{}".format(
+                                currentLimit,
+                                currentSize,
+                                len(tree),
+                                agentLimit
+                            )
+                        )
+
+                    return {currentSize, currentLimit}
+
+        else:
+            break
+
 
 # used to get the progress of computation
 
