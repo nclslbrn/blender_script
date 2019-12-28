@@ -1,44 +1,54 @@
 import bpy  # noqa
 import bmesh  # noqa
 import csv
-
+# progress bar implementation (visible on terminal)
 from functions.updateProgress import update_progress
+# particle class
 from classes.Agent import Agent
+# function to get distance between two coordinate
 from functions.measure import measure
+# function to erase object (specified by type) on the scene
 from functions.cleanScene import cleanScene
+# function to create and copy dodecahedron
 from functions.dodecahedron import createDodecahedron, cloneDodecahedron
-# from functions.skinModifierSetVertexRadius import setupVertSkinRadius
-# from functions.mechify import mechify
+
 D = bpy.data
 C = bpy.context
 
-
-'''
-    Your creative code here
-
-'''
+# display agentSize and limit size (and hide progress)
 debug = False
-writeAndCompute = True
-
+# Used to build DLA from CSV file
+writeAndCompute = False
+# How many agents live at same time
 agentNum = 100
+# How many agents will stuck on tree
 agentLimit = 10000
+# Size of the first agent (make decrease with time)
 agentSize = 1.0
+# Distance limit for the moves of the agents
 limit = 24
+# Factor to decrease agents size
 shrink = 0.9995
+# Factor to increase limit size
 expand = 1.05
+# Array to store moving agent
 agents = []
+# Array to store dead agents
 tree = []
-vertices_radius = []
-buildCompleted = False if writeAndCompute else False
-treeCount = 0
+# State of computation at the begining of the script
+computationDone = False if writeAndCompute else True
+
+# Create the first cluster at the center
 tree.append(Agent)
 tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
 tree[0].size = agentSize
 
+# init agents around the cluster
 
-def initParticles():
+
+def initAgents():
 
     for a in range(agentNum-1):
         newAgent = Agent(size=agentSize, x=0, y=0, z=0)
@@ -48,14 +58,19 @@ def initParticles():
         )
         agents.append(newAgent)
 
+# move agents reinit them if
+# they go away from limit
 
-def moveParticle(completion):
+
+def moveAgents(completion):
+
+    min = (limit+1) * -0.5
+    max = (limit+1) * 0.5
 
     for a in range(len(agents)):
-        min = (limit+1) * -0.5
-        max = (limit+1) * 0.5
 
         for m in range(24):
+
             agents[a] = agents[a].move()
 
             if(
@@ -71,8 +86,10 @@ def moveParticle(completion):
                     size=agentSize
                 )
 
+# check if agent is stuck on tree
 
-def copyParticleToStructure(completion):
+
+def copyAgentsToTree(completion):
 
     currentSize = agentSize
     currentLimit = limit
@@ -88,12 +105,13 @@ def copyParticleToStructure(completion):
                 # Add the agent to the tree
                 tree.append(agents[a])
 
-                # reset the agent
+                # change constants
                 if currentSize > 0.05:
                     currentSize *= shrink
                 if currentLimit < 74:
                     currentLimit *= expand
 
+                # reset the agent
                 del agents[a]
                 newAgent = Agent(x=0, y=0, z=0, size=currentSize)
                 newAgent.onLimit(
@@ -114,40 +132,39 @@ def copyParticleToStructure(completion):
 
     return {currentSize, currentLimit}
 
+# used to get the progress of computation
 
-def checkTreeLenght(buildCompleted):
+
+def checkTreeLenght(computationDone):
 
     if len(tree) > agentLimit:
-        buildCompleted = True
+        computationDone = True
 
-    return buildCompleted
-
-
-def drawLine(mesh, p1, p2):
-    mesh.verts.extend(p1, p2)
-    mesh.edges.extend(-1, -2)
+    return computationDone
 
 
 cleanScene('MESH')
-initParticles()
+initAgents()
 ddObj = createDodecahedron(size=agentSize)
 progress = 0
 
 if writeAndCompute:
-    while not buildCompleted:
+    while not computationDone:
 
-        moveParticle(progress)
-        agentSize, limit = copyParticleToStructure(progress)
-        buildCompleted = checkTreeLenght(buildCompleted)
+        moveAgents(progress)
+        agentSize, limit = copyAgentsToTree(progress)
+        computationDone = checkTreeLenght(computationDone)
 
         if not debug:
             progress = len(tree) / agentLimit
             update_progress("Computing DLA tree", progress)
 
-        if buildCompleted:
+        if computationDone:
             break
 
-    # Storing tree coordinnates
+    # Storing tree coordinnates into csv
+    # (back up in case of Blender crash)0,
+
     with open('../data-output/tree.csv', 'w') as dataFile:
         writer = csv.writer(dataFile)
         for i in range(len(tree)):
@@ -158,8 +175,8 @@ if writeAndCompute:
                 tree[i].z
             ])
 
-
-with open('../data-output/tree.csv') as File:
+# Build tree from CSV file
+with open('../data-output/10000-tree.csv') as File:
     reader = csv.reader(File)
     index = 0
 

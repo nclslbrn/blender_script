@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, pow
 
 
 def measure(first, second):
@@ -7,5 +7,5 @@ def measure(first, second):
     locy = second.y - first.y
     locz = second.z - first.z
 
-    distance = sqrt((locx)**2 + (locy)**2 + (locz)**2)
+    distance = sqrt(pow(locx, 2) + pow(locy, 2) + pow(locz, 3) * 1.0)
     return distance
