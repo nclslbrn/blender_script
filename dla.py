@@ -18,19 +18,23 @@ C = bpy.context
 # display agentSize and limit size (and hide progress)
 debug = False
 # Used to build DLA from CSV file
-writeAndCompute = False
+writeAndCompute = True
 # How many agents live at same time
 agentNum = 100
 # How many agents will stuck on tree
-agentLimit = 10000
+agentLimit = 500
+
+# Distance limit for the moves of the agents
+limit = 18
+# Factor to increase limit size
+expand = 1.001
+maxLimit = 240
 # Size of the first agent (make decrease with time)
 agentSize = 1.0
-# Distance limit for the moves of the agents
-limit = 24
 # Factor to decrease agents size
-shrink = 0.9995
-# Factor to increase limit size
-expand = 1.05
+shrink = 0.98
+minAgentSize = 0.01
+
 # Array to store moving agent
 agents = []
 # Array to store dead agents
@@ -58,33 +62,28 @@ def initAgents():
         )
         agents.append(newAgent)
 
-# move agents reinit them if
-# they go away from limit
+# reinit agents if they go away from limit
 
 
-def moveAgents(completion):
+def reinitOutsideAgents(completion):
 
     min = (limit+1) * -0.5
     max = (limit+1) * 0.5
 
     for a in range(len(agents)):
 
-        for m in range(24):
-
-            agents[a] = agents[a].move()
-
-            if(
-                agents[a].x < min or
-                agents[a].y < min or
-                agents[a].z < min or
-                agents[a].x > max or
-                agents[a].y > max or
-                agents[a].z > max
-            ):
-                agents[a] = agents[a].onLimit(
-                    limit=limit,
-                    size=agentSize
-                )
+        if(
+            agents[a].x < min or
+            agents[a].y < min or
+            agents[a].z < min or
+            agents[a].x > max or
+            agents[a].y > max or
+            agents[a].z > max
+        ):
+            agents[a] = agents[a].onLimit(
+                limit=limit,
+                size=agentSize
+            )
 
 # check if agent is stuck on tree
 
@@ -96,39 +95,43 @@ def copyAgentsToTree(completion):
 
     for a in range(len(agents)):
 
-        for t in range(len(tree)):
+        for m in range(4):
 
-            distance = measure(agents[a], tree[t])
+            agents[a] = agents[a].move()
 
-            if distance <= (agents[a].size + tree[t].size)*4:
+            for t in range(len(tree)):
 
-                # Add the agent to the tree
-                tree.append(agents[a])
+                distance = measure(agents[a], tree[t])
 
-                # change constants
-                if currentSize > 0.05:
-                    currentSize *= shrink
-                if currentLimit < 74:
-                    currentLimit *= expand
+                if distance <= agents[a].size + tree[t].size:
 
-                # reset the agent
-                del agents[a]
-                newAgent = Agent(x=0, y=0, z=0, size=currentSize)
-                newAgent.onLimit(
-                    limit=limit,
-                    size=currentSize
-                )
-                agents.append(newAgent)
+                    # Add the agent to the tree
+                    tree.append(agents[a])
 
-            if debug:
-                print(
-                    "Limit: {} | Size : {} | Obj : {}/{}".format(
-                        currentLimit,
-                        currentSize,
-                        len(tree),
-                        agentLimit
+                    # change constants
+                    if currentSize > minAgentSize:
+                        currentSize *= shrink
+                    if currentLimit < maxLimit:
+                        currentLimit *= expand
+
+                    # reset the agent
+                    del agents[a]
+                    newAgent = Agent(x=0, y=0, z=0, size=currentSize)
+                    newAgent.onLimit(
+                        limit=limit,
+                        size=currentSize
                     )
-                )
+                    agents.append(newAgent)
+
+                if debug:
+                    print(
+                        "Limit: {} | Size : {} | Obj : {}/{}".format(
+                            currentLimit,
+                            currentSize,
+                            len(tree),
+                            agentLimit
+                        )
+                    )
 
     return {currentSize, currentLimit}
 
@@ -151,12 +154,13 @@ progress = 0
 if writeAndCompute:
     while not computationDone:
 
-        moveAgents(progress)
+        progress = len(tree) / agentLimit
+        reinitOutsideAgents(progress)
         agentSize, limit = copyAgentsToTree(progress)
+
         computationDone = checkTreeLenght(computationDone)
 
         if not debug:
-            progress = len(tree) / agentLimit
             update_progress("Computing DLA tree", progress)
 
         if computationDone:
@@ -176,7 +180,7 @@ if writeAndCompute:
             ])
 
 # Build tree from CSV file
-with open('../data-output/10000-tree.csv') as File:
+with open('../data-output/tree.csv') as File:
     reader = csv.reader(File)
     index = 0
 
