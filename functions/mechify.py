@@ -17,11 +17,11 @@ def mechify(currObj):
     bevelMod.loop_slide = False
     bevelMod.use_clamp_overlap = False
     bevelMod.offset_type = 'OFFSET'
-    bevelMod.width = 0.07
+    bevelMod.width = 0.01
     bevelMod.material = 2
 
     solidifyMod = currObj.modifiers.new("tree solidify", 'SOLIDIFY')
-    solidifyMod.thickness = 0.7
+    solidifyMod.thickness = 0.2
     solidifyMod.use_rim = True
     solidifyMod.material_offset = 3
     solidifyMod.material_offset_rim = 1
