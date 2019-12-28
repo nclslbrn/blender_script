@@ -1,11 +1,9 @@
-from math import sqrt
+import numpy
 
 
 def measure(first, second):
 
-    locx = second.x - first.x
-    locy = second.y - first.y
-    locz = second.z - first.z
+    a = numpy.array([first.x, first.y, first.z])
+    b = numpy.array([second.x, second.y, second.z])
 
-    distance = sqrt(locx**2 + locy ** 2 + locz ** 2)
-    return distance
+    return numpy.linalg.norm(a - b)
