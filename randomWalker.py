@@ -8,7 +8,6 @@ if dir not in sys.path:
     sys.path.append(dir)
 
 from classes.Walker import Walker  # noqa: E731
-from classes.print import print as print  # noqa: E731
 
 # Convenience Variables
 D = bpy.data
