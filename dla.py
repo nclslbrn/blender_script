@@ -18,20 +18,20 @@ debug = False
 # Used to build DLA from CSV file
 writeAndCompute = True
 # How many agents live at same time
-agentNum = 50
+agentNum = 25
 # How many agents will stuck on tree
-agentLimit = 1000
+agentLimit = 100
 
-# Distance limit for the moves of the agents
-limit = 8.0
+# Distance limit of of agents move
+limit = 6.0
 # Factor to increase limit size
-expand = 1.005
-maxLimit = 120
-# Size of the first agent (make decrease with time)
-agentSize = 0.15
+expand = 1.001
+maxLimit = 260
+# Size of the first agent (decrease with time)
+agentSize = 0.35
 # Factor to decrease agents size
-shrink = 0.9995
-minAgentSize = 0.05
+shrink = 0.99
+minAgentSize = 0.01
 
 # Array to store moving agent
 agents = []
@@ -54,71 +54,11 @@ def initAgents():
     for a in range(agentNum-1):
 
         newAgent = Agent(size=agentSize, x=0, y=0, z=0)
-        newAgent.onLimit(
+        newAgent.onRadius(
             size=agentSize,
             limit=limit
         )
         agents.append(newAgent)
-
-
-# check if agent is stuck on tree
-def copyAgentsToTree():
-
-    currentSize = agentSize
-    currentLimit = limit
-
-    for a in range(len(agents)):
-
-        for m in range(12):
-            agents[a].move()
-
-        agents[a].reInitIfOutside(currentLimit)
-
-        for c in range(len(tree)):
-
-            dx = abs(agents[a].x - tree[c].x)
-            dy = abs(agents[a].y - tree[c].y)
-            dz = abs(agents[a].z - tree[c].z)
-
-            minD = agents[a].size + tree[c].size
-
-            if(
-                dx <= minD or
-                dy <= minD or
-                dz <= minD
-            ):
-
-                # Add the agent to the tree
-                tree.append(agents[a])
-
-                # change constants
-                if currentSize > minAgentSize:
-                    currentSize *= shrink
-                if currentLimit < maxLimit:
-                    currentLimit *= expand
-
-                # reset the agent
-                del agents[a]
-                newAgent = Agent(x=0, y=0, z=0, size=currentSize)
-                newAgent.onRadius(
-                    limit=limit,
-                    size=currentSize
-                )
-                agents.append(newAgent)
-
-            if debug:
-                print(
-                    "Limit: {} | Size : {} | Obj : {}/{}".format(
-                        currentLimit,
-                        currentSize,
-                        len(tree),
-                        agentLimit
-                    )
-                )
-            if isTreeFilled():
-                break
-
-    return {currentSize, currentLimit}
 
 
 def isTreeFilled():
@@ -135,7 +75,59 @@ ddObj = createDodecahedron(size=agentSize)
 if writeAndCompute:
     while not computationDone:
 
-        agentSize, limit = copyAgentsToTree()
+        for a in range(len(agents)):
+
+            for m in range(16):
+
+                agents[a].move()
+                agents[a].reInitIfOutside(limit)
+
+                for c in range(len(tree)):
+
+                    if isTreeFilled():
+                        break
+
+                    dx = round(abs(tree[c].x - agents[a].x), 1)
+                    dy = round(abs(tree[c].y - agents[a].y), 1)
+                    dz = round(abs(tree[c].z - agents[a].z), 1)
+
+                    minD = round(abs(agents[a].size + tree[c].size)*2, 1)
+
+                    if(
+                        dx <= minD and
+                        dy <= minD and
+                        dz <= minD
+                    ):
+
+                        # Add the agent to the tree
+                        tree.append(agents[a])
+
+                        # change constants
+                        if agentSize > minAgentSize:
+                            agentSize *= shrink
+
+                        """ if limit < maxLimit:
+                            limit *= expand """
+
+                        # reset the agent
+                        del agents[a]
+                        newAgent = Agent(x=0, y=0, z=0, size=agentSize)
+                        newAgent.onRadius(
+                            limit=limit,
+                            size=agentSize
+                        )
+                        agents.append(newAgent)
+
+            if debug:
+                print(
+                    "Limit: {} | Size : {} | Obj : {}/{}".format(
+                        limit,
+                        agentSize,
+                        len(tree),
+                        agentLimit
+                    )
+                )
+
         computationDone = isTreeFilled()
 
         if not debug:

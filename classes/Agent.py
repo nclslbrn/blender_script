@@ -12,6 +12,9 @@ class Agent:
         self.size = size
         self.stop = False
 
+    def setSize(self, size):
+        self.size = size
+
     def onLimit(self, limit, size):
         min = limit * -0.4
         max = limit * 0.4
@@ -43,10 +46,9 @@ class Agent:
 
         self.size = size
         self.stop = False
-        return self
 
     def onRadius(self, limit, size):
-        radius = limit * 0.75
+        radius = limit * 0.95
         theta = uniform(0, 1) * pi * 2
         phi = acos(1 - uniform(0, 1) * 2)
 
@@ -55,8 +57,6 @@ class Agent:
         self.z = cos(phi) * radius
         self.size = size
         self.stop = False
-
-        return self
 
     def move(self):
         if not self.stop:
@@ -74,12 +74,10 @@ class Agent:
             elif axe == 5:
                 self.z -= self.size
 
-        return self
-
     def reInitIfOutside(self, limit):
         if (
-            abs(self.x) > limit or
-            abs(self.y) > limit or
+            abs(self.x) > limit and
+            abs(self.y) > limit and
             abs(self.z) > limit
         ):
             self.onRadius(limit, self.size)
