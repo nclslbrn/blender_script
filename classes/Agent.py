@@ -1,5 +1,5 @@
 from random import uniform, randint
-from math import cos, sin, pi
+from math import cos, sin, acos,  pi
 
 
 class Agent:
@@ -11,17 +11,6 @@ class Agent:
         self.z = z
         self.size = size
         self.stop = False
-
-    def set(self, limit, size):
-        min = limit * -0.5
-        max = limit * 0.5
-        self.x = uniform(min, max)
-        self.y = uniform(min, max)
-        self.z = uniform(min, max)
-        self.size = size
-        self.stop = False
-
-        return self
 
     def onLimit(self, limit, size):
         min = limit * -0.4
@@ -57,11 +46,13 @@ class Agent:
         return self
 
     def onRadius(self, limit, size):
-        radius = limit / 2
-        angle = uniform(0, pi * 2)
-        self.x = radius * cos(angle)
-        self.y = radius * sin(angle)
-        self.z = radius * cos(angle)
+        radius = limit * 0.75
+        theta = uniform(0, 1) * pi * 2
+        phi = acos(1 - uniform(0, 1) * 2)
+
+        self.x = sin(phi) * cos(theta) * radius
+        self.y = sin(phi) * sin(theta) * radius
+        self.z = cos(phi) * radius
         self.size = size
         self.stop = False
 
@@ -84,3 +75,11 @@ class Agent:
                 self.z -= self.size
 
         return self
+
+    def reInitIfOutside(self, limit):
+        if (
+            abs(self.x) > limit or
+            abs(self.y) > limit or
+            abs(self.z) > limit
+        ):
+            self.onRadius(limit, self.size)

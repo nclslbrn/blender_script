@@ -1,7 +1,6 @@
 from math import sin, cos, pi
 from random import choice
 
-step = 0.5
 quarterPi = pi / 4
 
 
@@ -11,94 +10,97 @@ class Walker:
         self.x = x
         self.y = y
         self.z = z
+        self.size = 1
+
+    def setSize(self, size):
+        self.size = size
 
     # MOOVE FUNCTIONS
-
-    def NN(self):
-        self.y -= step
+    def NN(self, distance):
+        self.y -= distance
         return self
 
-    def SS(self):
-        self.y += step
+    def SS(self, distance):
+        self.y += distance
         return self
 
-    def WW(self):
-        self.x -= step
+    def WW(self, distance):
+        self.x -= distance
         return self
 
-    def EE(self):
-        self.x += step
+    def EE(self, distance):
+        self.x += distance
         return self
 
-    def NE(self):
-        self.x += step * cos(quarterPi)
-        self.y -= step * sin(quarterPi)
+    def NE(self, distance):
+        self.x += distance * cos(quarterPi)
+        self.y -= distance * sin(quarterPi)
         return self
 
-    def NW(self):
-        self.x -= step * cos(quarterPi)
-        self.y -= step * sin(quarterPi)
+    def NW(self, distance):
+        self.x -= distance * cos(quarterPi)
+        self.y -= distance * sin(quarterPi)
         return self
 
-    def SE(self):
-        self.x += step * cos(quarterPi)
-        self.y += step * sin(quarterPi)
+    def SE(self, distance):
+        self.x += distance * cos(quarterPi)
+        self.y += distance * sin(quarterPi)
         return self
 
-    def SW(self):
-        self.x -= step * cos(quarterPi)
-        self.y += step * sin(quarterPi)
+    def SW(self, distance):
+        self.x -= distance * cos(quarterPi)
+        self.y += distance * sin(quarterPi)
         return self
 
-    def UU(self):
-        self.z += step
-        return self
-    
-    def UW(self):
-        self.x -= step * cos(quarterPi)
-        self.z += step * sin(quarterPi)
+    def UU(self, distance):
+        self.z += distance
         return self
 
-    def UE(self):
-        self.x += step * cos(quarterPi)
-        self.z += step * sin(quarterPi)
+    def UW(self, distance):
+        self.x -= distance * cos(quarterPi)
+        self.z += distance * sin(quarterPi)
         return self
 
-    def UN(self):
-        self.y += step * cos(quarterPi)
-        self.z += step * sin(quarterPi)
+    def UE(self, distance):
+        self.x += distance * cos(quarterPi)
+        self.z += distance * sin(quarterPi)
         return self
 
-    def US(self):
-        self.y -= step * cos(quarterPi)
-        self.z += step * sin(quarterPi)
+    def UN(self, distance):
+        self.y += distance * cos(quarterPi)
+        self.z += distance * sin(quarterPi)
         return self
 
-    def DD(self):
-        self.z -= step
+    def US(self, distance):
+        self.y -= distance * cos(quarterPi)
+        self.z += distance * sin(quarterPi)
         return self
 
-    def DW(self):
-        self.x -= step * cos(quarterPi)
-        self.z -= step * sin(quarterPi)
+    def DD(self, distance):
+        self.z -= distance
         return self
 
-    def DE(self):
-        self.x += step * cos(quarterPi)
-        self.z -= step * sin(quarterPi)
+    def DW(self, distance):
+        self.x -= distance * cos(quarterPi)
+        self.z -= distance * sin(quarterPi)
         return self
 
-    def DN(self):
-        self.y += step * cos(quarterPi)
-        self.z -= step * sin(quarterPi)
+    def DE(self, distance):
+        self.x += distance * cos(quarterPi)
+        self.z -= distance * sin(quarterPi)
         return self
 
-    def DS(self):
-        self.y -= step * cos(quarterPi)
-        self.z -= step * sin(quarterPi)
+    def DN(self, distance):
+        self.y += distance * cos(quarterPi)
+        self.z -= distance * sin(quarterPi)
         return self
 
-    def move(self):
+    def DS(self, distance):
+        self.y -= distance * cos(quarterPi)
+        self.z -= distance * sin(quarterPi)
+        return self
+
+    def move(self, distance):
         moves = {
             'NN': self.NN,
             'NE': self.NE,
@@ -119,8 +121,9 @@ class Walker:
             'DN': self.DN,
             'DS': self.DS
         }
+        distance += self.size/2
         choosenMove = choice(list(moves.keys()))
-        newPos = moves[choosenMove]()
+        newPos = moves[choosenMove](distance)
         self = newPos
 
         return self
