@@ -47,12 +47,12 @@ tree[0].y = 0
 tree[0].z = 0
 tree[0].size = agentSize
 
+
 # init agents around the cluster
-
-
 def initAgents():
 
     for a in range(agentNum-1):
+
         newAgent = Agent(size=agentSize, x=0, y=0, z=0)
         newAgent.onLimit(
             size=agentSize,
@@ -121,11 +121,7 @@ def copyAgentsToTree():
     return {currentSize, currentLimit}
 
 
-# used to get the progress of computation
-
-
 def isTreeFilled():
-
     if len(tree) >= agentLimit:
         return True
     else:
@@ -146,10 +142,16 @@ if writeAndCompute:
             update_progress("Computing DLA tree", len(tree) / agentLimit)
 
         if computationDone:
+            print(
+                "Limit: {} | Size : {}".format(
+                    limit,
+                    agentSize
+                )
+            )
             break
 
     # Storing tree coordinnates into csv
-    # (back up in case of Blender crash)0,
+    # (back up in case of Blender crash),
     with open('../data-output/tree.csv', 'w') as dataFile:
         writer = csv.writer(dataFile)
         for i in range(len(tree)):
