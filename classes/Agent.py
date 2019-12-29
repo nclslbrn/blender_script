@@ -84,3 +84,21 @@ class Agent:
                 self.z -= self.size
 
         return self
+
+    def reinitIfOutside(self, limit):
+
+        min = (limit) * -0.5
+        max = (limit) * 0.5
+
+        if(
+            self.x < min or
+            self.y < min or
+            self.z < min or
+            self.x > max or
+            self.y > max or
+            self.z > max
+        ):
+            self.onLimit(
+                limit=limit,
+                size=self.size
+            )
