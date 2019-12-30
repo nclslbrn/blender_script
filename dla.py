@@ -1,14 +1,20 @@
 import bpy  # noqa
 import bmesh  # noqa
 import csv
+import sys
 # progress bar implementation (visible on terminal)
 from functions.updateProgress import update_progress
 # particle class
 from classes.Agent import Agent
-# function to erase object (specified by type) on the scene
+# function to erase every object cleanScene(<type>) on the scene
 from functions.cleanScene import cleanScene
 # function to create and copy dodecahedron
 from functions.dodecahedron import createDodecahedron, cloneDodecahedron
+
+# Argument from command line
+# blender --python dla.py -- <writeAndCompute>
+argv = sys.argv
+argv = argv[argv.index("--") + 1:]
 
 D = bpy.data
 C = bpy.context
@@ -16,18 +22,19 @@ C = bpy.context
 # display agentSize and limit size (and hide progress)
 debug = False
 # Used to build DLA from CSV file
-writeAndCompute = True
+writeAndCompute = argv[0] if argv[0] else True
 # How many agents live at same time
-agentNum = 100
+agentNum = 50
 # How many agents will stuck on tree
-agentLimit = 1000
+agentLimit = 500
 
-# Distance limit of of agents move
-diffusionLimit = 6.0
-# Size of the first agent (decrease with time)
+# Distance limit of of agents move (increase over time)
+diffusionLimit = 4.0
+maxDiffusionDistance = 24
+# Size of the first agent (decrease over time)
 agentSize = 0.35
 # Factor to decrease agents size
-shrink = 0.99
+shrink = 0.995
 minAgentSize = 0.01
 
 # Array to store moving agent
@@ -43,6 +50,8 @@ tree[0].x = 0
 tree[0].y = 0
 tree[0].z = 0
 tree[0].size = agentSize
+
+filePath = '../data-output/tree.csv'
 
 
 # init agents around the cluster
@@ -74,7 +83,7 @@ if writeAndCompute:
 
         for a in range(len(agents)):
 
-            for m in range(16):
+            for m in range(32):
 
                 agents[a].move()
                 agents[a].reInitIfOutside(diffusionLimit)
@@ -96,7 +105,7 @@ if writeAndCompute:
                         dz <= minD
                     ):
 
-                        # Add the agent to the tree
+                        # add the agent to the tree
                         tree.append(agents[a])
 
                         # change constants
@@ -112,14 +121,16 @@ if writeAndCompute:
                         )
                         agents.append(newAgent)
 
-                    if abs(tree[c].x) >= diffusionLimit:
-                        diffusionLimit = round(abs(tree[c].x)*1.05, 1)
+                    if diffusionLimit < maxDiffusionDistance:
 
-                    if abs(tree[c].y) >= diffusionLimit:
-                        diffusionLimit = round(abs(tree[c].y)*1.05, 1)
+                        if abs(tree[c].x) >= diffusionLimit*0.95:
+                            diffusionLimit = round(abs(tree[c].x)*1.05, 1)
 
-                    if abs(tree[c].z) >= diffusionLimit:
-                        diffusionLimit = round(abs(tree[c].z)*1.05, 1)
+                        if abs(tree[c].y) >= diffusionLimit*0.95:
+                            diffusionLimit = round(abs(tree[c].y)*1.05, 1)
+
+                        if abs(tree[c].z) >= diffusionLimit*0.95:
+                            diffusionLimit = round(abs(tree[c].z)*1.05, 1)
 
             if debug:
                 print(
@@ -134,7 +145,7 @@ if writeAndCompute:
         computationDone = isTreeFilled()
 
         if not debug:
-            update_progress("Computing DLA tree", len(tree) / agentLimit)
+            update_progress("Computing", len(tree) / agentLimit)
 
         if computationDone:
             print(
@@ -147,7 +158,7 @@ if writeAndCompute:
 
     # Storing tree coordinnates into csv
     # (back up in case of Blender crash),
-    with open('../data-output/tree.csv', 'w') as dataFile:
+    with open(filePath, 'w') as dataFile:
         writer = csv.writer(dataFile)
         for i in range(len(tree)):
             writer.writerow([
@@ -158,7 +169,7 @@ if writeAndCompute:
             ])
 
 # Build tree from CSV file
-with open('../data-output/tree.csv') as File:
+with open(filePath) as File:
     reader = csv.reader(File)
     index = 0
 
