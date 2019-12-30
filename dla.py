@@ -12,29 +12,31 @@ from functions.cleanScene import cleanScene
 from functions.dodecahedron import createDodecahedron, cloneDodecahedron
 
 # Argument from command line
-# blender --python dla.py -- <writeAndCompute>
+# blender --python dla.py -- <computeAndWrite>
 argv = sys.argv
 argv = argv[argv.index("--") + 1:]
 
 D = bpy.data
 C = bpy.context
-
 # display agentSize and limit size (and hide progress)
 debug = False
 # Used to build DLA from CSV file
-writeAndCompute = argv[0] if argv[0] else True
+if argv[0]:
+    computeAndWrite = True if argv[0] == 'compute' else False
+else:
+    computeAndWrite = True
 # How many agents live at same time
 agentNum = 50
 # How many agents will stuck on tree
 agentLimit = 500
 
 # Distance limit of of agents move (increase over time)
-diffusionLimit = 4.0
+diffusionLimit = 6.0
 maxDiffusionDistance = 24
 # Size of the first agent (decrease over time)
 agentSize = 0.35
 # Factor to decrease agents size
-shrink = 0.995
+shrink = 0.9995
 minAgentSize = 0.01
 
 # Array to store moving agent
@@ -42,7 +44,7 @@ agents = []
 # Array to store dead agents
 tree = []
 # State of computation at the begining of the script
-computationDone = False if writeAndCompute else True
+computationDone = False if computeAndWrite else True
 
 # Create the first cluster at the center
 tree.append(Agent)
@@ -53,8 +55,14 @@ tree[0].size = agentSize
 
 filePath = '../data-output/tree.csv'
 
+if computeAndWrite:
+    print("Python will compute {} DLA points.".format(agentLimit))
+else:
+    print("Blender will build {} DLA points shape.".format(agentLimit))
 
 # init agents around the cluster
+
+
 def initAgents():
 
     for a in range(agentNum-1):
@@ -78,7 +86,7 @@ cleanScene('MESH')
 initAgents()
 ddObj = createDodecahedron(size=agentSize)
 
-if writeAndCompute:
+if computeAndWrite:
     while not computationDone:
 
         for a in range(len(agents)):
@@ -123,14 +131,14 @@ if writeAndCompute:
 
                     if diffusionLimit < maxDiffusionDistance:
 
-                        if abs(tree[c].x) >= diffusionLimit*0.95:
-                            diffusionLimit = round(abs(tree[c].x)*1.05, 1)
+                        if abs(tree[c].x) >= diffusionLimit*0.99:
+                            diffusionLimit = round(abs(tree[c].x)*1.01, 1)
 
-                        if abs(tree[c].y) >= diffusionLimit*0.95:
-                            diffusionLimit = round(abs(tree[c].y)*1.05, 1)
+                        if abs(tree[c].y) >= diffusionLimit*0.99:
+                            diffusionLimit = round(abs(tree[c].y)*1.01, 1)
 
-                        if abs(tree[c].z) >= diffusionLimit*0.95:
-                            diffusionLimit = round(abs(tree[c].z)*1.05, 1)
+                        if abs(tree[c].z) >= diffusionLimit*0.99:
+                            diffusionLimit = round(abs(tree[c].z)*1.01, 1)
 
             if debug:
                 print(
