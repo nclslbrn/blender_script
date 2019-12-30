@@ -11,32 +11,43 @@ from functions.cleanScene import cleanScene
 # function to create and copy dodecahedron
 from functions.dodecahedron import createDodecahedron, cloneDodecahedron
 
-# Argument from command line
-# blender --python dla.py -- <computeAndWrite>
-argv = sys.argv
-argv = argv[argv.index("--") + 1:]
 
 D = bpy.data
 C = bpy.context
 # display agentSize and limit size (and hide progress)
 debug = False
-# Used to build DLA from CSV file
-if argv[0]:
-    computeAndWrite = True if argv[0] == 'compute' else False
+
+# Argument from command line
+# blender --python dla.py -- <compute> <file.csv>
+if "--" in sys.argv:
+    args = sys.argv[sys.argv.index("--") + 1:]
+
+    if args[0]:
+        if args[0] == 'compute':
+            computeAndWrite = True
+        else:
+            computeAndWrite = False
+
+    if args[1] and ".csv" in args[1]:
+        file = args[1]
+    else:
+        file = 'tree.csv'
 else:
     computeAndWrite = True
+    file = 'tree.csv'
+
 # How many agents live at same time
-agentNum = 50
+agentNum = 33
 # How many agents will stuck on tree
-agentLimit = 500
+agentLimit = 300
 
 # Distance limit of of agents move (increase over time)
-diffusionLimit = 6.0
+diffusionLimit = 7.0
 maxDiffusionDistance = 24
 # Size of the first agent (decrease over time)
 agentSize = 0.35
 # Factor to decrease agents size
-shrink = 0.9995
+shrink = 0.995
 minAgentSize = 0.01
 
 # Array to store moving agent
@@ -53,12 +64,22 @@ tree[0].y = 0
 tree[0].z = 0
 tree[0].size = agentSize
 
-filePath = '../data-output/tree.csv'
+filePath = '/home/nlebrun/Documents/Blender/data-output/' + file
 
 if computeAndWrite:
-    print("Python will compute {} DLA points.".format(agentLimit))
+    print(
+        "Python will compute {} DLA points and store them into {}.".format(
+            agentLimit,
+            file
+        )
+    )
 else:
-    print("Blender will build {} DLA points shape.".format(agentLimit))
+    print(
+        "Blender will build {} DLA points shape from {}.".format(
+            agentLimit,
+            file
+        )
+    )
 
 # init agents around the cluster
 
