@@ -18,15 +18,12 @@ debug = False
 # Used to build DLA from CSV file
 writeAndCompute = True
 # How many agents live at same time
-agentNum = 25
+agentNum = 100
 # How many agents will stuck on tree
-agentLimit = 100
+agentLimit = 1000
 
 # Distance limit of of agents move
-limit = 6.0
-# Factor to increase limit size
-expand = 1.001
-maxLimit = 260
+diffusionLimit = 6.0
 # Size of the first agent (decrease with time)
 agentSize = 0.35
 # Factor to decrease agents size
@@ -56,7 +53,7 @@ def initAgents():
         newAgent = Agent(size=agentSize, x=0, y=0, z=0)
         newAgent.onRadius(
             size=agentSize,
-            limit=limit
+            limit=diffusionLimit
         )
         agents.append(newAgent)
 
@@ -80,18 +77,18 @@ if writeAndCompute:
             for m in range(16):
 
                 agents[a].move()
-                agents[a].reInitIfOutside(limit)
+                agents[a].reInitIfOutside(diffusionLimit)
 
                 for c in range(len(tree)):
 
                     if isTreeFilled():
                         break
 
-                    dx = round(abs(tree[c].x - agents[a].x), 1)
-                    dy = round(abs(tree[c].y - agents[a].y), 1)
-                    dz = round(abs(tree[c].z - agents[a].z), 1)
+                    dx = round(abs(tree[c].x - agents[a].x), 2)
+                    dy = round(abs(tree[c].y - agents[a].y), 2)
+                    dz = round(abs(tree[c].z - agents[a].z), 2)
 
-                    minD = round(abs(agents[a].size + tree[c].size)*2, 1)
+                    minD = round(agents[a].size + tree[c].size, 2)*2
 
                     if(
                         dx <= minD and
@@ -106,22 +103,28 @@ if writeAndCompute:
                         if agentSize > minAgentSize:
                             agentSize *= shrink
 
-                        """ if limit < maxLimit:
-                            limit *= expand """
-
                         # reset the agent
                         del agents[a]
                         newAgent = Agent(x=0, y=0, z=0, size=agentSize)
                         newAgent.onRadius(
-                            limit=limit,
+                            limit=diffusionLimit,
                             size=agentSize
                         )
                         agents.append(newAgent)
 
+                    if abs(tree[c].x) >= diffusionLimit:
+                        diffusionLimit = round(abs(tree[c].x)*1.05, 1)
+
+                    if abs(tree[c].y) >= diffusionLimit:
+                        diffusionLimit = round(abs(tree[c].y)*1.05, 1)
+
+                    if abs(tree[c].z) >= diffusionLimit:
+                        diffusionLimit = round(abs(tree[c].z)*1.05, 1)
+
             if debug:
                 print(
                     "Limit: {} | Size : {} | Obj : {}/{}".format(
-                        limit,
+                        diffusionLimit,
                         agentSize,
                         len(tree),
                         agentLimit
@@ -136,7 +139,7 @@ if writeAndCompute:
         if computationDone:
             print(
                 "Limit: {} | Size : {}".format(
-                    limit,
+                    diffusionLimit,
                     agentSize
                 )
             )
