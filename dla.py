@@ -37,18 +37,18 @@ else:
     file = 'tree.csv'
 
 # How many agents live at same time
-agentNum = 33
+agentNum = 500
 # How many agents will stuck on tree
-agentLimit = 300
+agentLimit = 3000
 
 # Distance limit of of agents move (increase over time)
 diffusionLimit = 7.0
 maxDiffusionDistance = 24
 # Size of the first agent (decrease over time)
-agentSize = 0.35
+agentSize = 0.4
 # Factor to decrease agents size
-shrink = 0.995
-minAgentSize = 0.01
+shrink = 0.999
+minAgentSize = 0.05
 
 # Array to store moving agent
 agents = []
@@ -64,7 +64,7 @@ tree[0].y = 0
 tree[0].z = 0
 tree[0].size = agentSize
 
-filePath = '/home/nlebrun/Documents/Blender/data-output/' + file
+filePath = '/Users/nlebrun/Documents/Blender/data-output/' + file
 
 if computeAndWrite:
     print(
@@ -108,94 +108,92 @@ initAgents()
 ddObj = createDodecahedron(size=agentSize)
 
 if computeAndWrite:
-    while not computationDone:
 
-        for a in range(len(agents)):
-
-            for m in range(32):
-
-                agents[a].move()
-                agents[a].reInitIfOutside(diffusionLimit)
-
-                for c in range(len(tree)):
-
-                    if isTreeFilled():
-                        break
-
-                    dx = round(abs(tree[c].x - agents[a].x), 2)
-                    dy = round(abs(tree[c].y - agents[a].y), 2)
-                    dz = round(abs(tree[c].z - agents[a].z), 2)
-
-                    minD = round(agents[a].size + tree[c].size, 2)*2
-
-                    if(
-                        dx <= minD and
-                        dy <= minD and
-                        dz <= minD
-                    ):
-
-                        # add the agent to the tree
-                        tree.append(agents[a])
-
-                        # change constants
-                        if agentSize > minAgentSize:
-                            agentSize *= shrink
-
-                        # reset the agent
-                        del agents[a]
-                        newAgent = Agent(x=0, y=0, z=0, size=agentSize)
-                        newAgent.onRadius(
-                            limit=diffusionLimit,
-                            size=agentSize
-                        )
-                        agents.append(newAgent)
-
-                    if diffusionLimit < maxDiffusionDistance:
-
-                        if abs(tree[c].x) >= diffusionLimit*0.99:
-                            diffusionLimit = round(abs(tree[c].x)*1.01, 1)
-
-                        if abs(tree[c].y) >= diffusionLimit*0.99:
-                            diffusionLimit = round(abs(tree[c].y)*1.01, 1)
-
-                        if abs(tree[c].z) >= diffusionLimit*0.99:
-                            diffusionLimit = round(abs(tree[c].z)*1.01, 1)
-
-            if debug:
-                print(
-                    "Limit: {} | Size : {} | Obj : {}/{}".format(
-                        diffusionLimit,
-                        agentSize,
-                        len(tree),
-                        agentLimit
-                    )
-                )
-
-        computationDone = isTreeFilled()
-
-        if not debug:
-            update_progress("Computing", len(tree) / agentLimit)
-
-        if computationDone:
-            print(
-                "Limit: {} | Size : {}".format(
-                    diffusionLimit,
-                    agentSize
-                )
-            )
-            break
-
-    # Storing tree coordinnates into csv
-    # (back up in case of Blender crash),
     with open(filePath, 'w') as dataFile:
         writer = csv.writer(dataFile)
-        for i in range(len(tree)):
-            writer.writerow([
-                tree[i].size,
-                tree[i].x,
-                tree[i].y,
-                tree[i].z
-            ])
+
+        while not computationDone:
+
+            for a in range(len(agents)):
+
+                for m in range(32):
+
+                    agents[a].move()
+                    agents[a].reInitIfOutside(diffusionLimit)
+
+                    for c in range(len(tree)):
+
+                        if isTreeFilled():
+                            break
+
+                        dx = round(abs(tree[c].x - agents[a].x), 2)
+                        dy = round(abs(tree[c].y - agents[a].y), 2)
+                        dz = round(abs(tree[c].z - agents[a].z), 2)
+
+                        minD = round(agents[a].size + tree[c].size, 2)*2
+
+                        if(
+                            dx <= minD and
+                            dy <= minD and
+                            dz <= minD
+                        ):
+
+                            # add the agent to the tree
+                            tree.append(agents[a])
+                            writer.writerow([
+                                agents[a].size,
+                                agents[a].x,
+                                agents[a].y,
+                                agents[a].z
+                            ])
+                            # change constants
+                            if agentSize > minAgentSize:
+                                agentSize *= shrink
+
+                            # reset the agent
+                            del agents[a]
+                            newAgent = Agent(x=0, y=0, z=0, size=agentSize)
+                            newAgent.onRadius(
+                                limit=diffusionLimit,
+                                size=agentSize
+                            )
+                            agents.append(newAgent)
+
+                        if diffusionLimit < maxDiffusionDistance:
+
+                            if abs(tree[c].x) >= diffusionLimit*0.99:
+                                diffusionLimit = round(abs(tree[c].x)*1.025, 1)
+
+                            if abs(tree[c].y) >= diffusionLimit*0.99:
+                                diffusionLimit = round(abs(tree[c].y)*1.025, 1)
+
+                            if abs(tree[c].z) >= diffusionLimit*0.99:
+                                diffusionLimit = round(abs(tree[c].z)*1.025, 1)
+
+                if debug:
+                    print(
+                        "Limit: {} | Size : {} | Obj : {}/{}".format(
+                            diffusionLimit,
+                            agentSize,
+                            len(tree),
+                            agentLimit
+                        )
+                    )
+
+            computationDone = isTreeFilled()
+
+            if not debug:
+                update_progress("Computing", len(tree) / agentLimit)
+
+            if computationDone:
+                print(
+                    "Limit: {} | Size : {}".format(
+                        diffusionLimit,
+                        agentSize
+                    )
+                )
+                break
+
 
 # Build tree from CSV file
 with open(filePath) as File:
