@@ -13,8 +13,7 @@ class Pool:
         for a in range(self.maxItems):
 
             if(remaining > 0):
-                r = random.random()
-                item = r
+                item = random.uniform(0, a/self.maxItems) * remaining
                 self.items.append(item)
                 remaining -= item
             else:
